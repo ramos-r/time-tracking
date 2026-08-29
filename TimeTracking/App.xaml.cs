@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TimeTracking.Data;
 using TimeTracking.Helpers;
 using TimeTracking.Repositories;
+using TimeTracking.Services;
 using TimeTracking.ViewModels;
 using TimeTracking.Views;
 
@@ -29,6 +30,12 @@ public partial class App : Application
         services.AddSingleton<ITagRepository, TagRepository>();
         services.AddSingleton<ITaskRepository, TaskRepository>();
         services.AddSingleton<ITimeEntryRepository, TimeEntryRepository>();
+
+        services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<TimeTrackingViewModel>();
+        services.AddSingleton<TagsViewModel>();
+        services.AddSingleton<PomodoroViewModel>();
+        services.AddSingleton<SettingsViewModel>();
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();

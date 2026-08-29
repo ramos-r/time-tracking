@@ -4,15 +4,87 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:TimeTracking.ViewModels"
+        xmlns:views="clr-namespace:TimeTracking.Views"
+        xmlns:components="clr-namespace:TimeTracking.Views.Components"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
-        Title="{Binding Title}"
+        Title="Time Tracking"
         Height="600" Width="960"
-        MinHeight="480" MinWidth="720">
-    <Grid>
-        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-            <TextBlock Text="{Binding Title}" FontSize="28" FontWeight="Bold" HorizontalAlignment="Center" />
-            <TextBlock Text="{Binding StatusMessage}" FontSize="14" Margin="0,12,0,0" HorizontalAlignment="Center" />
-        </StackPanel>
-    </Grid>
+        MinHeight="480" MinWidth="720"
+        Background="#181614"
+        Foreground="#F2ECE5">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <DataTemplate DataType="{x:Type vm:TimeTrackingViewModel}">
+            <views:TimeTrackingView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TagsViewModel}">
+            <views:TagsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PomodoroViewModel}">
+            <views:PomodoroView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView />
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Barra superior: sempre visível, contém o botão hamburger (Seção 19) -->
+        <Border DockPanel.Dock="Top" Height="48" Background="#211F1C" BorderBrush="#3A3631" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="&#9776;" Command="{Binding ToggleSidebarCommand}"
+                        Width="48" Height="48" FontSize="18"
+                        Background="Transparent" BorderThickness="0" Foreground="#F2ECE5" Cursor="Hand" />
+                <TextBlock Text="{Binding PageTitle}" FontSize="16" FontWeight="SemiBold"
+                           Foreground="#F2ECE5" VerticalAlignment="Center" Margin="8,0,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Área de conteúdo + sidebar em overlay -->
+        <Grid ClipToBounds="True">
+            <ContentControl Content="{Binding CurrentViewModel}" />
+
+            <!-- Camada escurecida: clicar aqui fecha o menu (Seção 19) -->
+            <Border Background="#B3000000"
+                    Visibility="{Binding IsSidebarOpen, Converter={StaticResource BoolToVisibility}}">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding CloseSidebarCommand}" />
+                </Border.InputBindings>
+            </Border>
+
+            <!-- Sidebar propriamente dita, deslizando por cima do conteúdo -->
+            <components:Sidebar HorizontalAlignment="Left" DataContext="{Binding}">
+                <components:Sidebar.RenderTransform>
+                    <TranslateTransform X="-240" />
+                </components:Sidebar.RenderTransform>
+                <components:Sidebar.Style>
+                    <Style TargetType="components:Sidebar">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSidebarOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X"
+                                                             To="0" Duration="0:0:0.18" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X"
+                                                             To="-240" Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </components:Sidebar.Style>
+            </components:Sidebar>
+        </Grid>
+    </DockPanel>
 </Window>
