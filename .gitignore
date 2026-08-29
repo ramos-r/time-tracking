@@ -1,0 +1,14 @@
+## .NET
+bin/
+obj/
+*.user
+
+## Rider / VS
+.vs/
+.idea/
+*.suo
+
+## Local app data (não versionar banco local de desenvolvimento)
+*.db
+*.db-shm
+*.db-wal
