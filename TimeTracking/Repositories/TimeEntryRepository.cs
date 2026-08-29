@@ -41,7 +41,16 @@ public class TimeEntryRepository : ITimeEntryRepository
     public async Task UpdateAsync(TimeEntry entry)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        context.TimeEntries.Update(entry);
+
+        // Mesmo motivo do TaskRepository.UpdateAsync: copiar escalares para uma entidade
+        // rastreada nesta conexão, em vez de anexar "entry" (que pode trazer a navegação
+        // Task de um contexto já descartado).
+        var existing = await context.TimeEntries.FindAsync(entry.Id)
+            ?? throw new InvalidOperationException($"TimeEntry {entry.Id} não encontrada.");
+
+        existing.StartedAt = entry.StartedAt;
+        existing.EndedAt = entry.EndedAt;
+
         await context.SaveChangesAsync();
     }
 }

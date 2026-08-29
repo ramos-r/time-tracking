@@ -31,11 +31,20 @@ public partial class App : Application
         services.AddSingleton<ITaskRepository, TaskRepository>();
         services.AddSingleton<ITimeEntryRepository, TimeEntryRepository>();
 
+        services.AddSingleton<ITaskService, TaskService>();
+        services.AddSingleton<ITagService, TagService>();
+
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<TimeTrackingViewModel>();
         services.AddSingleton<TagsViewModel>();
         services.AddSingleton<PomodoroViewModel>();
         services.AddSingleton<SettingsViewModel>();
+
+        // TaskEditorViewModel é transiente (uma instância nova por edição/criação); a
+        // factory permite que TimeTrackingViewModel obtenha uma instância sem depender
+        // diretamente do IServiceProvider (evita o anti-padrão service locator).
+        services.AddTransient<TaskEditorViewModel>();
+        services.AddSingleton<Func<TaskEditorViewModel>>(sp => () => sp.GetRequiredService<TaskEditorViewModel>());
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();

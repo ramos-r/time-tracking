@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using TimeTracking.Data;
 using TimeTracking.Models;
+using TimeTracking.Repositories;
 using DomainTask = TimeTracking.Models.Task;
 using Task = System.Threading.Tasks.Task;
 
@@ -33,6 +34,13 @@ public class PersistenceTests : IDisposable
     public void Dispose() => _connection.Dispose();
 
     private AppDbContext CreateContext() => new(_options);
+
+    private class TestDbContextFactory : IDbContextFactory<AppDbContext>
+    {
+        private readonly DbContextOptions<AppDbContext> _options;
+        public TestDbContextFactory(DbContextOptions<AppDbContext> options) => _options = options;
+        public AppDbContext CreateDbContext() => new(_options);
+    }
 
     [Fact]
     public async Task Migrations_Create_Expected_Tables()
@@ -193,5 +201,42 @@ public class PersistenceTests : IDisposable
         var total = entries.Sum(te => (te.EndedAt! - te.StartedAt)!.Value.TotalMinutes);
 
         Assert.Equal(120, total);
+    }
+
+    /// <summary>
+    /// Exercita TaskRepository/TagRepository.UpdateAsync de verdade (não o DbContext cru),
+    /// cobrindo o bug corrigido na Fase 4: atualizar uma Task carregada com a navegação Tag
+    /// via context.Tasks.Update(task) direto faria o EF Core tentar reanexar/atualizar
+    /// também a Tag relacionada. O fix busca uma entidade rastreada e copia só os escalares.
+    /// </summary>
+    [Fact]
+    public async Task Updating_Task_Through_Repository_Does_Not_Corrupt_Related_Tag()
+    {
+        var factory = new TestDbContextFactory(_options);
+        var taskRepository = new TaskRepository(factory);
+        var tagRepository = new TagRepository(factory);
+
+        var tagA = new Tag { Name = "Desenvolvimento", Color = "#C89B6D", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        var tagB = new Tag { Name = "Estudos", Color = "#7FAE82", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        await tagRepository.AddAsync(tagA);
+        await tagRepository.AddAsync(tagB);
+
+        var task = new DomainTask { Name = "Rascunho", TagId = tagA.Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        await taskRepository.AddAsync(task);
+
+        var loaded = await taskRepository.GetByIdAsync(task.Id);
+        loaded!.Name = "Desenvolver API";
+        loaded.TagId = tagB.Id;
+        loaded.UpdatedAt = DateTime.UtcNow;
+        await taskRepository.UpdateAsync(loaded);
+
+        var reloaded = await taskRepository.GetByIdAsync(task.Id);
+        Assert.Equal("Desenvolver API", reloaded!.Name);
+        Assert.Equal(tagB.Id, reloaded.TagId);
+
+        var tagAReloaded = await tagRepository.GetByIdAsync(tagA.Id);
+        var tagBReloaded = await tagRepository.GetByIdAsync(tagB.Id);
+        Assert.Equal("Desenvolvimento", tagAReloaded!.Name);
+        Assert.Equal("Estudos", tagBReloaded!.Name);
     }
 }

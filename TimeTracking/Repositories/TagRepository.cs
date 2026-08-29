@@ -39,7 +39,17 @@ public class TagRepository : ITagRepository
     public async Task UpdateAsync(Tag tag)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        context.Tags.Update(tag);
+
+        // Copia apenas os escalares para uma entidade rastreada nesta conexão — mesmo
+        // motivo do TaskRepository.UpdateAsync (evitar anexar navegações indevidamente).
+        var existing = await context.Tags.FindAsync(tag.Id)
+            ?? throw new InvalidOperationException($"Tag {tag.Id} não encontrada.");
+
+        existing.Name = tag.Name;
+        existing.Description = tag.Description;
+        existing.Color = tag.Color;
+        existing.UpdatedAt = tag.UpdatedAt;
+
         await context.SaveChangesAsync();
     }
 

@@ -43,7 +43,19 @@ public class TaskRepository : ITaskRepository
     public async Task UpdateAsync(DomainTask task)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        context.Tasks.Update(task);
+
+        // Copia apenas os escalares para uma entidade rastreada nesta conexão — evitar
+        // context.Tasks.Update(task) diretamente, pois "task" pode carregar navegações
+        // (Tag, TimeEntries) de um contexto já descartado, o que faria o EF Core tentar
+        // anexar/atualizar também essas entidades relacionadas sem necessidade.
+        var existing = await context.Tasks.FindAsync(task.Id)
+            ?? throw new InvalidOperationException($"Task {task.Id} não encontrada.");
+
+        existing.Name = task.Name;
+        existing.Description = task.Description;
+        existing.TagId = task.TagId;
+        existing.UpdatedAt = task.UpdatedAt;
+
         await context.SaveChangesAsync();
     }
 
