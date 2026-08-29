@@ -33,6 +33,8 @@ public partial class App : Application
 
         services.AddSingleton<ITaskService, TaskService>();
         services.AddSingleton<ITagService, TagService>();
+        services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<ITimerService, TimerService>();
 
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<TimeTrackingViewModel>();

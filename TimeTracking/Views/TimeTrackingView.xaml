@@ -98,5 +98,15 @@
                                        ConfirmCommand="{Binding ConfirmDeleteCommand}"
                                        CancelCommand="{Binding CancelDeleteCommand}" />
         </Border>
+
+        <!-- Conflito de timer: só uma tarefa ativa por vez (Seção 15) -->
+        <Border Grid.RowSpan="2" Background="#B3000000"
+                Visibility="{Binding IsPlayConflictOpen, Converter={StaticResource BoolToVisibility}}">
+            <components:ConfirmDialog Title="Tarefa em execução"
+                                       Message="{Binding PlayConflictMessage}"
+                                       ConfirmText="Iniciar" CancelText="Cancelar"
+                                       ConfirmCommand="{Binding ConfirmPlayConflictCommand}"
+                                       CancelCommand="{Binding CancelPlayConflictCommand}" />
+        </Border>
     </Grid>
 </UserControl>

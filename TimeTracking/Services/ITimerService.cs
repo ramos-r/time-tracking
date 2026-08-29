@@ -1,0 +1,25 @@
+using DomainTask = TimeTracking.Models.Task;
+
+namespace TimeTracking.Services;
+
+public interface ITimerService
+{
+    /// <summary>Calcula o estado do timer de uma tarefa a partir de suas TimeEntry.</summary>
+    Task<TimerStatus> GetStatusAsync(int taskId);
+
+    /// <summary>Retorna a tarefa com uma TimeEntry aberta no momento, se houver alguma
+    /// (a regra é global — Seção 15 — no máximo uma tarefa ativa em toda a aplicação).</summary>
+    Task<DomainTask?> GetActiveTaskAsync();
+
+    /// <summary>Inicia o timer da tarefa. Se outra tarefa estiver em execução, ela é
+    /// pausada automaticamente (a confirmação da Seção 15 é responsabilidade da UI/ViewModel,
+    /// que deve perguntar antes de chamar este método quando houver conflito).</summary>
+    Task StartAsync(int taskId);
+
+    /// <summary>Encerra a sessão aberta da tarefa (Seção 12).</summary>
+    Task PauseAsync(int taskId);
+
+    /// <summary>Mecanicamente idêntico a Pause (Seção 14, item 15 da nota de revisão) —
+    /// mantido como método separado por clareza semântica de UX.</summary>
+    Task StopAsync(int taskId);
+}

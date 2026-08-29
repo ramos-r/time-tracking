@@ -1,0 +1,54 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using TimeTracking.Models;
+using TimeTracking.Services;
+using DomainTask = TimeTracking.Models.Task;
+
+namespace TimeTracking.ViewModels;
+
+/// <summary>
+/// Envolve uma Task de domínio para exibição na lista, agregando o estado do timer
+/// (Seção 10) calculado pelo TimerService. O tick de 1s (Seção 43) atualiza apenas o
+/// item em execução, recalculando em memória — sem consultar o banco a cada tick.
+/// </summary>
+public partial class TaskListItemViewModel : ObservableObject
+{
+    public DomainTask Task { get; }
+
+    public int Id => Task.Id;
+    public string Name => Task.Name;
+    public string? Description => Task.Description;
+    public Tag? Tag => Task.Tag;
+
+    [ObservableProperty]
+    private bool _isRunning;
+
+    [ObservableProperty]
+    private TimeSpan _elapsed;
+
+    public string ElapsedDisplay =>
+        $"{(int)Elapsed.TotalHours:D2}:{Elapsed.Minutes:D2}:{Elapsed.Seconds:D2}";
+
+    public TimerStatus Status { get; private set; } = new(false, TimeSpan.Zero, null);
+
+    public TaskListItemViewModel(DomainTask task)
+    {
+        Task = task;
+    }
+
+    public void ApplyStatus(TimerStatus status, DateTime now)
+    {
+        Status = status;
+        IsRunning = status.IsRunning;
+        Elapsed = status.GetElapsed(now);
+    }
+
+    public void Tick(DateTime now)
+    {
+        if (IsRunning)
+        {
+            Elapsed = Status.GetElapsed(now);
+        }
+    }
+
+    partial void OnElapsedChanged(TimeSpan value) => OnPropertyChanged(nameof(ElapsedDisplay));
+}

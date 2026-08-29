@@ -35,13 +35,6 @@ public class PersistenceTests : IDisposable
 
     private AppDbContext CreateContext() => new(_options);
 
-    private class TestDbContextFactory : IDbContextFactory<AppDbContext>
-    {
-        private readonly DbContextOptions<AppDbContext> _options;
-        public TestDbContextFactory(DbContextOptions<AppDbContext> options) => _options = options;
-        public AppDbContext CreateDbContext() => new(_options);
-    }
-
     [Fact]
     public async Task Migrations_Create_Expected_Tables()
     {
