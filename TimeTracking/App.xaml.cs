@@ -48,6 +48,10 @@ public partial class App : Application
         services.AddTransient<TaskEditorViewModel>();
         services.AddSingleton<Func<TaskEditorViewModel>>(sp => () => sp.GetRequiredService<TaskEditorViewModel>());
 
+        // Mesmo raciocínio para o editor de tags (Fase 7).
+        services.AddTransient<TagEditorViewModel>();
+        services.AddSingleton<Func<TagEditorViewModel>>(sp => () => sp.GetRequiredService<TagEditorViewModel>());
+
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
     }
