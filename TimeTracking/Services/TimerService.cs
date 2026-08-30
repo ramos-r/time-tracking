@@ -89,4 +89,18 @@ public class TimerService : ITimerService
     }
 
     public Task StopAsync(int taskId) => PauseAsync(taskId);
+
+    public Task<List<TimeEntry>> GetEntriesForTaskAsync(int taskId) => _timeEntryRepository.GetAllForTaskAsync(taskId);
+
+    public async Task UpdateEntryTimestampsAsync(int entryId, DateTime startedAt, DateTime? endedAt)
+    {
+        if (endedAt.HasValue && endedAt.Value < startedAt)
+        {
+            throw new ArgumentException("O término não pode ser anterior ao início.", nameof(endedAt));
+        }
+
+        // Só os escalares StartedAt/EndedAt importam aqui — TimeEntryRepository.UpdateAsync
+        // busca a entidade rastreada pelo Id e copia apenas esses campos (fix da Fase 4).
+        await _timeEntryRepository.UpdateAsync(new TimeEntry { Id = entryId, StartedAt = startedAt, EndedAt = endedAt });
+    }
 }

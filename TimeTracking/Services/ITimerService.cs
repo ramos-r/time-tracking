@@ -1,4 +1,6 @@
+using TimeTracking.Models;
 using DomainTask = TimeTracking.Models.Task;
+using Task = System.Threading.Tasks.Task;
 
 namespace TimeTracking.Services;
 
@@ -22,4 +24,12 @@ public interface ITimerService
     /// <summary>Mecanicamente idêntico a Pause (Seção 14, item 15 da nota de revisão) —
     /// mantido como método separado por clareza semântica de UX.</summary>
     Task StopAsync(int taskId);
+
+    /// <summary>Retorna as TimeEntry de uma tarefa, ordenadas por início — usadas pelo
+    /// painel de edição (Seção 17) para decidir entre edição direta ou modo agregado.</summary>
+    Task<List<TimeEntry>> GetEntriesForTaskAsync(int taskId);
+
+    /// <summary>Atualiza os timestamps de uma TimeEntry específica (Seção 17: só permitido
+    /// quando a tarefa possui exatamente uma sessão). Não altera TaskId.</summary>
+    Task UpdateEntryTimestampsAsync(int entryId, DateTime startedAt, DateTime? endedAt);
 }

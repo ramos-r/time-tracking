@@ -12,6 +12,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibility" />
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
 
         <DataTemplate DataType="{x:Type vm:TaskEditorViewModel}">
             <StackPanel Margin="24">
@@ -32,6 +33,46 @@
                     <ComboBox Width="220" ItemsSource="{Binding AvailableTags}"
                               SelectedItem="{Binding SelectedTag}" DisplayMemberPath="Name" />
                     <Button Content="Limpar" Command="{Binding ClearTagCommand}" Margin="8,0,0,0" Padding="8,4" />
+                </StackPanel>
+
+                <!-- Data/hora (Seção 17): ocultos para tarefa nova (0 TimeEntry) -->
+                <StackPanel Visibility="{Binding HasNoEntries, Converter={StaticResource InverseBoolToVisibility}}">
+                    <TextBlock Text="Múltiplas sessões — início da primeira, término da última (somente leitura)"
+                               FontSize="11" Foreground="#D3A85C" Margin="0,20,0,4" TextWrapping="Wrap"
+                               Visibility="{Binding HasMultipleEntries, Converter={StaticResource BoolToVisibility}}" />
+
+                    <TextBlock Text="Data de início" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="#F2ECE5" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <DatePicker Grid.Column="0" SelectedDate="{Binding StartDate}" IsEnabled="{Binding CanEditDates}" />
+                        <TextBox Grid.Column="1" Text="{Binding StartTimeText, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanEditDates}" Margin="4,0,0,0" Padding="4" ToolTip="HH:mm" />
+                    </Grid>
+
+                    <TextBlock Text="Data de término" Margin="0,12,0,4" Opacity="0.7" FontSize="12" Foreground="#F2ECE5" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <DatePicker Grid.Column="0" SelectedDate="{Binding EndDate}" IsEnabled="{Binding CanEditEndDate}" />
+                        <TextBox Grid.Column="1" Text="{Binding EndTimeText, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanEditEndDate}" Margin="4,0,0,0" Padding="4" ToolTip="HH:mm" />
+                    </Grid>
+                    <TextBlock Text="Em andamento — pause ou pare o timer para editar o término" FontSize="11"
+                               Opacity="0.6" Foreground="#F2ECE5" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
+
+                    <TextBlock Text="{Binding DateTimeError}" Foreground="#C87575" FontSize="11" Margin="0,4,0,0"
+                               Visibility="{Binding DateTimeError, Converter={StaticResource NullOrEmptyToVisibility}}" />
+
+                    <TextBlock Margin="0,12,0,0" FontSize="12" Foreground="#B8AEA3">
+                        <Run Text="Tempo total: " />
+                        <Run Text="{Binding TotalElapsedDisplay, Mode=OneWay}" FontFamily="Consolas" />
+                    </TextBlock>
                 </StackPanel>
 
                 <TextBlock Text="{Binding ErrorMessage}" Foreground="#C87575" FontSize="12" Margin="0,16,0,0"

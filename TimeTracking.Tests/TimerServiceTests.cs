@@ -187,4 +187,72 @@ public class TimerServiceTests : IDisposable
         Assert.True(status.IsRunning);
         Assert.Equal(TimeSpan.FromMinutes(20), status.GetElapsed(_clock.UtcNow));
     }
+
+    [Fact]
+    public async Task UpdateEntryTimestampsAsync_Edits_Only_The_Given_Entry_Seção17()
+    {
+        var timer = CreateTimerService();
+        var taskId = await CreateTaskAsync("Desenvolver API");
+
+        var factory = new TestDbContextFactory(_options);
+        var timeEntryRepository = new TimeEntryRepository(factory);
+
+        var baseDate = _clock.UtcNow;
+        var entryA = new TimeEntry { TaskId = taskId, StartedAt = baseDate, EndedAt = baseDate.AddHours(1) };
+        var entryB = new TimeEntry { TaskId = taskId, StartedAt = baseDate.AddHours(4), EndedAt = baseDate.AddHours(4.5) };
+        await timeEntryRepository.AddAsync(entryA);
+        await timeEntryRepository.AddAsync(entryB);
+
+        // Corrige a sessão B para ter começado 15 minutos antes do registrado.
+        var correctedStart = entryB.StartedAt.AddMinutes(-15);
+        await timer.UpdateEntryTimestampsAsync(entryB.Id, correctedStart, entryB.EndedAt);
+
+        var entries = await timer.GetEntriesForTaskAsync(taskId);
+        var reloadedA = entries.Single(e => e.Id == entryA.Id);
+        var reloadedB = entries.Single(e => e.Id == entryB.Id);
+
+        Assert.Equal(baseDate, reloadedA.StartedAt); // sessão A intacta
+        Assert.Equal(correctedStart, reloadedB.StartedAt);
+
+        var status = await timer.GetStatusAsync(taskId);
+        Assert.Equal(TimeSpan.FromMinutes(105), status.ClosedEntriesTotal); // 60min (A) + 45min (B: 30min originais + 15min corrigidos)
+    }
+
+    [Fact]
+    public async Task UpdateEntryTimestampsAsync_Rejects_EndBefore_Start()
+    {
+        var timer = CreateTimerService();
+        var taskId = await CreateTaskAsync("Desenvolver API");
+
+        var factory = new TestDbContextFactory(_options);
+        var timeEntryRepository = new TimeEntryRepository(factory);
+        var entry = new TimeEntry { TaskId = taskId, StartedAt = _clock.UtcNow, EndedAt = _clock.UtcNow.AddHours(1) };
+        await timeEntryRepository.AddAsync(entry);
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            timer.UpdateEntryTimestampsAsync(entry.Id, _clock.UtcNow.AddHours(2), _clock.UtcNow.AddHours(1)));
+    }
+
+    [Fact]
+    public async Task Editing_Task_Name_Does_Not_Affect_Its_TimeEntries_History_Fase6()
+    {
+        // Critério de aceite da Fase 6: uma tarefa já encerrada deve poder ser editada
+        // sem perder seu histórico de tempo.
+        var timer = CreateTimerService();
+        var taskId = await CreateTaskAsync("Nome original");
+
+        await timer.StartAsync(taskId);
+        _clock.UtcNow = _clock.UtcNow.AddHours(1);
+        await timer.StopAsync(taskId);
+
+        var factory = new TestDbContextFactory(_options);
+        var taskService = new TaskService(new TaskRepository(factory));
+        await taskService.UpdateAsync(taskId, "Nome editado", "Descrição nova", tagId: null);
+
+        var entries = await timer.GetEntriesForTaskAsync(taskId);
+        var status = await timer.GetStatusAsync(taskId);
+
+        Assert.Single(entries);
+        Assert.Equal(TimeSpan.FromHours(1), status.ClosedEntriesTotal);
+    }
 }
