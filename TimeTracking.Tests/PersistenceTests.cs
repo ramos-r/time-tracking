@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using TimeTracking.Data;
 using TimeTracking.Models;
 using TimeTracking.Repositories;
+using TimeTracking.Services;
 using DomainTask = TimeTracking.Models.Task;
 using Task = System.Threading.Tasks.Task;
 
@@ -231,5 +232,32 @@ public class PersistenceTests : IDisposable
         var tagBReloaded = await tagRepository.GetByIdAsync(tagB.Id);
         Assert.Equal("Desenvolvimento", tagAReloaded!.Name);
         Assert.Equal("Estudos", tagBReloaded!.Name);
+    }
+
+    [Fact]
+    public async Task ClearHistoryAsync_Removes_All_Tasks_And_TimeEntries_But_Keeps_Tags()
+    {
+        var factory = new TestDbContextFactory(_options);
+        var taskService = new TaskService(new TaskRepository(factory));
+        var tagRepository = new TagRepository(factory);
+        var timeEntryRepository = new TimeEntryRepository(factory);
+
+        var tag = new Tag { Name = "Desenvolvimento", Color = "#C89B6D", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+        await tagRepository.AddAsync(tag);
+
+        var taskA = await taskService.CreateAsync("Tarefa A", null, tag.Id);
+        var taskB = await taskService.CreateAsync("Tarefa B", null, null);
+        await timeEntryRepository.AddAsync(new TimeEntry { TaskId = taskA.Id, StartedAt = DateTime.UtcNow, EndedAt = DateTime.UtcNow.AddHours(1) });
+        await timeEntryRepository.AddAsync(new TimeEntry { TaskId = taskB.Id, StartedAt = DateTime.UtcNow, EndedAt = DateTime.UtcNow.AddMinutes(30) });
+
+        await taskService.ClearHistoryAsync();
+
+        Assert.Empty(await taskService.GetAllAsync());
+        await using var context = CreateContext();
+        Assert.Empty(await context.TimeEntries.ToListAsync());
+
+        var tags = await tagRepository.GetAllAsync();
+        Assert.Single(tags); // a Tag é preservada (Seção 27)
+        Assert.Equal("Desenvolvimento", tags[0].Name);
     }
 }

@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Paleta Dark Mode (Seção 28) -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#181614" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#211F1C" />
+    <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="#292622" />
+    <SolidColorBrush x:Key="BorderBrush" Color="#3A3631" />
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#C89B6D" />
+    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#D8AE82" />
+    <SolidColorBrush x:Key="OnPrimaryBrush" Color="#181614" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F2ECE5" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B8AEA3" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#81786F" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="#7FAE82" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#D3A85C" />
+    <SolidColorBrush x:Key="DangerBrush" Color="#C87575" />
+    <SolidColorBrush x:Key="OverlayBrush" Color="#B3000000" />
+</ResourceDictionary>

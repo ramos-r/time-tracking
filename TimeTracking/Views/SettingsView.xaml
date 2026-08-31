@@ -4,9 +4,74 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:TimeTracking.ViewModels"
+             xmlns:svc="clr-namespace:TimeTracking.Services"
+             xmlns:components="clr-namespace:TimeTracking.Views.Components"
+             xmlns:converters="clr-namespace:TimeTracking.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}">
-    <Grid>
-        <TextBlock Text="{Binding Title}" FontSize="24" FontWeight="Bold" Margin="24" />
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibility" />
+        <converters:EnumToBooleanConverter x:Key="EnumToBoolean" />
+    </UserControl.Resources>
+
+    <Grid ClipToBounds="True">
+        <ScrollViewer Margin="24">
+            <StackPanel MaxWidth="420" HorizontalAlignment="Left">
+                <TextBlock Text="Settings" FontSize="24" FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24" />
+
+                <!-- Aparência -->
+                <TextBlock Text="Aparência" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                <TextBlock Text="Tema" FontSize="12" Opacity="0.7"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                <StackPanel>
+                    <RadioButton Content="Dark" GroupName="Theme" Margin="0,0,0,8"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static svc:AppTheme.Dark}}" />
+                    <RadioButton Content="Light" GroupName="Theme" Margin="0,0,0,8"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static svc:AppTheme.Light}}" />
+                    <RadioButton Content="Sistema" GroupName="Theme" Margin="0,0,0,8"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static svc:AppTheme.System}}" />
+                </StackPanel>
+
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,24" />
+
+                <!-- Dados -->
+                <TextBlock Text="Dados" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                <Button Content="Limpar histórico" Command="{Binding RequestClearHistoryCommand}"
+                        HorizontalAlignment="Left" Padding="16,8" Cursor="Hand"
+                        Background="Transparent" Foreground="{DynamicResource DangerBrush}"
+                        BorderBrush="{DynamicResource DangerBrush}" BorderThickness="1" />
+                <TextBlock Text="{Binding StatusMessage}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
+
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,24" />
+
+                <!-- Sobre -->
+                <TextBlock Text="Sobre" FontSize="16" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
+                <TextBlock Text="Time Tracking" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0">
+                    <Run Text="Versão " /><Run Text="{Binding AppVersion, Mode=OneWay}" />
+                </TextBlock>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Confirmação de limpar histórico (Seção 27) -->
+        <Border Background="{DynamicResource OverlayBrush}"
+                Visibility="{Binding IsClearHistoryConfirmOpen, Converter={StaticResource BoolToVisibility}}">
+            <components:ConfirmDialog Title="Excluir histórico?"
+                                       Message="Esta ação removerá todas as tarefas e registros de tempo. As tags cadastradas serão preservadas.&#10;&#10;Essa ação não pode ser desfeita."
+                                       ConfirmText="Excluir" CancelText="Cancelar"
+                                       ConfirmCommand="{Binding ConfirmClearHistoryCommand}"
+                                       CancelCommand="{Binding CancelClearHistoryCommand}" />
+        </Border>
     </Grid>
 </UserControl>

@@ -11,8 +11,8 @@
         Title="Time Tracking"
         Height="600" Width="960"
         MinHeight="480" MinWidth="720"
-        Background="#181614"
-        Foreground="#F2ECE5">
+        Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
@@ -33,13 +33,15 @@
 
     <DockPanel>
         <!-- Barra superior: sempre visível, contém o botão hamburger (Seção 19) -->
-        <Border DockPanel.Dock="Top" Height="48" Background="#211F1C" BorderBrush="#3A3631" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Height="48" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Content="&#9776;" Command="{Binding ToggleSidebarCommand}"
                         Width="48" Height="48" FontSize="18"
-                        Background="Transparent" BorderThickness="0" Foreground="#F2ECE5" Cursor="Hand" />
+                        Background="Transparent" BorderThickness="0"
+                        Foreground="{DynamicResource TextPrimaryBrush}" Cursor="Hand" />
                 <TextBlock Text="{Binding PageTitle}" FontSize="16" FontWeight="SemiBold"
-                           Foreground="#F2ECE5" VerticalAlignment="Center" Margin="8,0,0,0" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0" />
             </StackPanel>
         </Border>
 
@@ -48,7 +50,7 @@
             <ContentControl Content="{Binding CurrentViewModel}" />
 
             <!-- Camada escurecida: clicar aqui fecha o menu (Seção 19) -->
-            <Border Background="#B3000000"
+            <Border Background="{DynamicResource OverlayBrush}"
                     Visibility="{Binding IsSidebarOpen, Converter={StaticResource BoolToVisibility}}">
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftClick" Command="{Binding CloseSidebarCommand}" />

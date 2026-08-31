@@ -7,22 +7,36 @@
              x:Name="Root">
     <!-- Componente de diálogo próprio do design system (Seção 30) — nunca MessageBox.Show. -->
     <Grid>
-        <Border Background="#292622" BorderBrush="#3A3631" BorderThickness="1" CornerRadius="8"
+        <Border Background="{DynamicResource SurfaceElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" CornerRadius="8"
                 Padding="24" MaxWidth="360" HorizontalAlignment="Center" VerticalAlignment="Center">
             <StackPanel>
                 <TextBlock Text="{Binding Title, ElementName=Root}" FontSize="18" FontWeight="Bold"
-                           Foreground="#F2ECE5" TextWrapping="Wrap" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" />
                 <TextBlock Text="{Binding Message, ElementName=Root}" FontSize="13"
-                           Foreground="#B8AEA3" TextWrapping="Wrap" Margin="0,12,0,0" />
+                           Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,12,0,0" />
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
                     <Button Content="{Binding CancelText, ElementName=Root}"
                             Command="{Binding CancelCommand, ElementName=Root}"
                             Padding="16,8" Margin="0,0,8,0"
-                            Background="Transparent" Foreground="#F2ECE5" BorderThickness="1" BorderBrush="#3A3631" />
+                            Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}"
+                            BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" />
                     <Button Content="{Binding ConfirmText, ElementName=Root}"
                             Command="{Binding ConfirmCommand, ElementName=Root}"
-                            Padding="16,8"
-                            Background="#C87575" Foreground="White" BorderThickness="0" />
+                            Padding="16,8" BorderThickness="0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDestructive, ElementName=Root}" Value="False">
+                                        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
             </StackPanel>
         </Border>

@@ -12,7 +12,8 @@
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
     </UserControl.Resources>
 
-    <Border Background="#211F1C" BorderBrush="#3A3631" BorderThickness="1" CornerRadius="8"
+    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1" CornerRadius="8"
             Padding="16" Margin="0,0,0,8" Cursor="Hand">
         <Border.InputBindings>
             <MouseBinding MouseAction="LeftClick"
@@ -28,8 +29,8 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
-                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="#F2ECE5" />
-                <TextBlock Text="{Binding Description}" FontSize="12" Foreground="#B8AEA3" Margin="0,2,0,0"
+                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"
                            TextWrapping="Wrap"
                            Visibility="{Binding Description, Converter={StaticResource NullOrEmptyToVisibility}}" />
                 <components:TagChip TagItem="{Binding Tag}" Margin="0,8,0,0"
@@ -37,7 +38,7 @@
             </StackPanel>
 
             <TextBlock Grid.Column="1" Text="{Binding ElapsedDisplay}" FontFamily="Consolas"
-                       FontSize="16" Foreground="#F2ECE5" VerticalAlignment="Center" Margin="12,0" />
+                       FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="12,0" />
 
             <!-- Botão Play: visível apenas quando esta tarefa NÃO está em execução (Seção 11) -->
             <Button Grid.Column="2" Content="&#9654;" ToolTip="Iniciar" VerticalAlignment="Center"
@@ -45,7 +46,7 @@
                     Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}"
                     Width="36" Height="36" FontSize="14"
-                    Background="Transparent" Foreground="#7FAE82" BorderThickness="0" Cursor="Hand" />
+                    Background="Transparent" Foreground="{DynamicResource SuccessBrush}" BorderThickness="0" Cursor="Hand" />
 
             <!-- Pause/Stop: visíveis apenas quando esta é a tarefa em execução (Seção 12/14) -->
             <StackPanel Grid.Column="2" Orientation="Horizontal"
@@ -54,18 +55,18 @@
                         Command="{Binding DataContext.PauseCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                         CommandParameter="{Binding}"
                         Width="36" Height="36" FontSize="14"
-                        Background="Transparent" Foreground="#D3A85C" BorderThickness="0" Cursor="Hand" />
+                        Background="Transparent" Foreground="{DynamicResource WarningBrush}" BorderThickness="0" Cursor="Hand" />
                 <Button Content="&#9632;" ToolTip="Parar" VerticalAlignment="Center"
                         Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                         CommandParameter="{Binding}"
                         Width="36" Height="36" FontSize="14"
-                        Background="Transparent" Foreground="#C87575" BorderThickness="0" Cursor="Hand" />
+                        Background="Transparent" Foreground="{DynamicResource DangerBrush}" BorderThickness="0" Cursor="Hand" />
             </StackPanel>
 
             <Button Grid.Column="3" Content="Excluir" VerticalAlignment="Center"
                     Command="{Binding DataContext.RequestDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}"
-                    Background="Transparent" Foreground="#C87575" BorderThickness="0" Cursor="Hand"
+                    Background="Transparent" Foreground="{DynamicResource DangerBrush}" BorderThickness="0" Cursor="Hand"
                     Margin="8,0,0,0" />
         </Grid>
     </Border>

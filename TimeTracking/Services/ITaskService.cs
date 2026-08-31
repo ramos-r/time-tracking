@@ -9,4 +9,7 @@ public interface ITaskService
     Task<DomainTask> CreateAsync(string name, string? description, int? tagId);
     Task UpdateAsync(int id, string name, string? description, int? tagId);
     Task DeleteAsync(int id);
+
+    /// <summary>Limpar histórico (Seção 27): remove todas as Task e TimeEntry, preservando as Tag.</summary>
+    Task ClearHistoryAsync();
 }

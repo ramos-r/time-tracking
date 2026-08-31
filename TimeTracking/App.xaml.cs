@@ -35,6 +35,7 @@ public partial class App : Application
         services.AddSingleton<ITagService, TagService>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<ITimerService, TimerService>();
+        services.AddSingleton<IThemeService, ThemeService>();
 
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<TimeTrackingViewModel>();
@@ -64,6 +65,9 @@ public partial class App : Application
         {
             context.Database.Migrate();
         }
+
+        // Aplica o tema antes de qualquer janela ser exibida, para não haver "flash" do tema errado.
+        _serviceProvider.GetRequiredService<IThemeService>().Initialize();
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         mainWindow.Show();

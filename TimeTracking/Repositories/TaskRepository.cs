@@ -69,4 +69,13 @@ public class TaskRepository : ITaskRepository
             await context.SaveChangesAsync();
         }
     }
+
+    public async Task DeleteAllAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        // DELETE FROM Tasks direto no banco — o ON DELETE CASCADE (Seção 9) remove as
+        // TimeEntry associadas; as Tag não são tocadas por essa relação.
+        await context.Tasks.ExecuteDeleteAsync();
+    }
 }

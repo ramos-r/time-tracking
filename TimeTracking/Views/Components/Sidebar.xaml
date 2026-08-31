@@ -15,7 +15,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="Padding" Value="16,12" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#F2ECE5" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Cursor" Value="Hand" />
@@ -29,7 +29,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="#292622" />
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -38,7 +38,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Background="#211F1C" BorderBrush="#3A3631" BorderThickness="0,0,1,0">
+    <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
         <StackPanel Margin="0,16,0,0">
             <Button Content="Time Tracking" Style="{StaticResource NavButton}"
                     Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.TimeTracking}" />

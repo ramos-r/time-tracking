@@ -51,6 +51,8 @@ public class TaskService : ITaskService
 
     public Task DeleteAsync(int id) => _taskRepository.DeleteAsync(id);
 
+    public Task ClearHistoryAsync() => _taskRepository.DeleteAllAsync();
+
     private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))

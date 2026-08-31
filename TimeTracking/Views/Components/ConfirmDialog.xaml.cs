@@ -24,6 +24,18 @@ public partial class ConfirmDialog : UserControl
     public static readonly DependencyProperty CancelCommandProperty =
         DependencyProperty.Register(nameof(CancelCommand), typeof(ICommand), typeof(ConfirmDialog));
 
+    /// <summary>Quando true (padrão), o botão de confirmação usa a cor de perigo — para ações
+    /// destrutivas (excluir, limpar histórico). Quando false, usa a cor primária (ex.: o
+    /// diálogo de conflito de timer da Seção 15, que não é uma ação destrutiva).</summary>
+    public static readonly DependencyProperty IsDestructiveProperty =
+        DependencyProperty.Register(nameof(IsDestructive), typeof(bool), typeof(ConfirmDialog), new PropertyMetadata(true));
+
+    public bool IsDestructive
+    {
+        get => (bool)GetValue(IsDestructiveProperty);
+        set => SetValue(IsDestructiveProperty, value);
+    }
+
     public string? Title
     {
         get => (string?)GetValue(TitleProperty);

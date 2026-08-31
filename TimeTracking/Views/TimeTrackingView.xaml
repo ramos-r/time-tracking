@@ -16,19 +16,19 @@
 
         <DataTemplate DataType="{x:Type vm:TaskEditorViewModel}">
             <StackPanel Margin="24">
-                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="#F2ECE5" />
+                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
 
-                <TextBlock Text="Nome" Margin="0,20,0,4" Opacity="0.7" FontSize="12" Foreground="#F2ECE5" />
+                <TextBlock Text="Nome" Margin="0,20,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
-                <TextBlock Text="{Binding NameError}" Foreground="#C87575" FontSize="11" Margin="0,4,0,0"
+                <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
                            Visibility="{Binding NameError, Converter={StaticResource NullOrEmptyToVisibility}}" />
 
-                <TextBlock Text="Descrição" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="#F2ECE5" />
+                <TextBlock Text="Descrição" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
                          AcceptsReturn="True" TextWrapping="Wrap" Height="80" Padding="8"
                          VerticalScrollBarVisibility="Auto" />
 
-                <TextBlock Text="Tag" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="#F2ECE5" />
+                <TextBlock Text="Tag" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <StackPanel Orientation="Horizontal">
                     <ComboBox Width="220" ItemsSource="{Binding AvailableTags}"
                               SelectedItem="{Binding SelectedTag}" DisplayMemberPath="Name" />
@@ -38,10 +38,10 @@
                 <!-- Data/hora (Seção 17): ocultos para tarefa nova (0 TimeEntry) -->
                 <StackPanel Visibility="{Binding HasNoEntries, Converter={StaticResource InverseBoolToVisibility}}">
                     <TextBlock Text="Múltiplas sessões — início da primeira, término da última (somente leitura)"
-                               FontSize="11" Foreground="#D3A85C" Margin="0,20,0,4" TextWrapping="Wrap"
+                               FontSize="11" Foreground="{DynamicResource WarningBrush}" Margin="0,20,0,4" TextWrapping="Wrap"
                                Visibility="{Binding HasMultipleEntries, Converter={StaticResource BoolToVisibility}}" />
 
-                    <TextBlock Text="Data de início" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="#F2ECE5" />
+                    <TextBlock Text="Data de início" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -52,7 +52,7 @@
                                  IsEnabled="{Binding CanEditDates}" Margin="4,0,0,0" Padding="4" ToolTip="HH:mm" />
                     </Grid>
 
-                    <TextBlock Text="Data de término" Margin="0,12,0,4" Opacity="0.7" FontSize="12" Foreground="#F2ECE5" />
+                    <TextBlock Text="Data de término" Margin="0,12,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -63,27 +63,28 @@
                                  IsEnabled="{Binding CanEditEndDate}" Margin="4,0,0,0" Padding="4" ToolTip="HH:mm" />
                     </Grid>
                     <TextBlock Text="Em andamento — pause ou pare o timer para editar o término" FontSize="11"
-                               Opacity="0.6" Foreground="#F2ECE5" Margin="0,4,0,0" TextWrapping="Wrap"
+                               Opacity="0.6" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap"
                                Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
 
-                    <TextBlock Text="{Binding DateTimeError}" Foreground="#C87575" FontSize="11" Margin="0,4,0,0"
+                    <TextBlock Text="{Binding DateTimeError}" Foreground="{DynamicResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
                                Visibility="{Binding DateTimeError, Converter={StaticResource NullOrEmptyToVisibility}}" />
 
-                    <TextBlock Margin="0,12,0,0" FontSize="12" Foreground="#B8AEA3">
+                    <TextBlock Margin="0,12,0,0" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
                         <Run Text="Tempo total: " />
                         <Run Text="{Binding TotalElapsedDisplay, Mode=OneWay}" FontFamily="Consolas" />
                     </TextBlock>
                 </StackPanel>
 
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="#C87575" FontSize="12" Margin="0,16,0,0"
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,16,0,0"
                            TextWrapping="Wrap"
                            Visibility="{Binding ErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
                     <Button Content="Cancelar" Command="{Binding CancelCommand}" Padding="16,8" Margin="0,0,8,0"
-                            Background="Transparent" Foreground="#F2ECE5" BorderBrush="#3A3631" BorderThickness="1" />
+                            Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" />
                     <Button Content="Salvar" Command="{Binding SaveCommand}" Padding="16,8"
-                            Background="#C89B6D" Foreground="#181614" BorderThickness="0" />
+                            Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}" BorderThickness="0" />
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
@@ -95,11 +96,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Hoje" FontSize="14" Opacity="0.6" Foreground="#F2ECE5" Margin="24,24,24,8" />
+        <TextBlock Grid.Row="0" Text="Hoje" FontSize="14" Opacity="0.6" Foreground="{DynamicResource TextPrimaryBrush}" Margin="24,24,24,8" />
 
         <ScrollViewer Grid.Row="1" Margin="24,0,24,24">
             <StackPanel>
-                <TextBlock Text="{Binding ListErrorMessage}" Foreground="#C87575" Margin="0,0,0,12"
+                <TextBlock Text="{Binding ListErrorMessage}" Foreground="{DynamicResource DangerBrush}" Margin="0,0,0,12"
                            Visibility="{Binding ListErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
 
                 <ItemsControl ItemsSource="{Binding Tasks}">
@@ -112,26 +113,27 @@
 
                 <Button Content="+ Nova tarefa" Command="{Binding OpenNewTaskCommand}"
                         HorizontalAlignment="Center" Margin="0,16,0,0" Padding="16,8"
-                        Background="#C89B6D" Foreground="#181614" BorderThickness="0" Cursor="Hand" />
+                        Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}"
+                        BorderThickness="0" Cursor="Hand" />
             </StackPanel>
         </ScrollViewer>
 
         <!-- Painel direito de edição/criação (Seção 20) -->
-        <Border Grid.RowSpan="2" Background="#B3000000"
+        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
                 Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
             <Border.InputBindings>
                 <MouseBinding MouseAction="LeftClick" Command="{Binding CloseEditorCommand}" />
             </Border.InputBindings>
         </Border>
 
-        <Border Grid.RowSpan="2" HorizontalAlignment="Right" Width="360" Background="#211F1C"
-                BorderBrush="#3A3631" BorderThickness="1,0,0,0"
+        <Border Grid.RowSpan="2" HorizontalAlignment="Right" Width="360" Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
                 Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
             <ContentControl Content="{Binding Editor}" />
         </Border>
 
         <!-- Confirmação de exclusão (Seção 23, componente da Seção 30) -->
-        <Border Grid.RowSpan="2" Background="#B3000000"
+        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
                 Visibility="{Binding IsDeleteConfirmOpen, Converter={StaticResource BoolToVisibility}}">
             <components:ConfirmDialog Title="Excluir tarefa?"
                                        Message="{Binding DeleteConfirmMessage}"
@@ -140,12 +142,13 @@
                                        CancelCommand="{Binding CancelDeleteCommand}" />
         </Border>
 
-        <!-- Conflito de timer: só uma tarefa ativa por vez (Seção 15) -->
-        <Border Grid.RowSpan="2" Background="#B3000000"
+        <!-- Conflito de timer: só uma tarefa ativa por vez (Seção 15) — não é destrutivo -->
+        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
                 Visibility="{Binding IsPlayConflictOpen, Converter={StaticResource BoolToVisibility}}">
             <components:ConfirmDialog Title="Tarefa em execução"
                                        Message="{Binding PlayConflictMessage}"
                                        ConfirmText="Iniciar" CancelText="Cancelar"
+                                       IsDestructive="False"
                                        ConfirmCommand="{Binding ConfirmPlayConflictCommand}"
                                        CancelCommand="{Binding CancelPlayConflictCommand}" />
         </Border>
