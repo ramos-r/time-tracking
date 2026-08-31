@@ -49,8 +49,18 @@
                         Background="Transparent" Foreground="{DynamicResource DangerBrush}"
                         BorderBrush="{DynamicResource DangerBrush}" BorderThickness="1" />
                 <TextBlock Text="{Binding StatusMessage}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
+                           Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVisibility}}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
 
                 <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,24" />
 

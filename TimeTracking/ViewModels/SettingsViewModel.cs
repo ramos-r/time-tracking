@@ -20,6 +20,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string? _statusMessage;
 
+    [ObservableProperty]
+    private bool _isStatusError;
+
     public string AppVersion =>
         Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0";
 
@@ -45,11 +48,13 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             await _taskService.ClearHistoryAsync();
-            StatusMessage = "Histórico limpo. As tags cadastradas foram preservadas.";
+            StatusMessage = "Sucesso.";
+            IsStatusError = false;
         }
         catch (Exception)
         {
             StatusMessage = "Não foi possível limpar o histórico. Tente novamente.";
+            IsStatusError = true;
         }
 
         IsClearHistoryConfirmOpen = false;
