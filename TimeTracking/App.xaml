@@ -3,6 +3,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:TimeTracking">
     <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Resources/Icons/Icons.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Buttons.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Inputs.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Cards.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Menus.xaml" />
+            </ResourceDictionary.MergedDictionaries>
 
+            <FontFamily x:Key="AppFontFamily">pack://application:,,,/Resources/Fonts/#Montserrat</FontFamily>
+            <FontFamily x:Key="AppFontFamilyLight">pack://application:,,,/Resources/Fonts/#Montserrat Light</FontFamily>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

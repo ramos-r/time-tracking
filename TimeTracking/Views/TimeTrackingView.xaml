@@ -16,7 +16,7 @@
 
         <DataTemplate DataType="{x:Type vm:TaskEditorViewModel}">
             <StackPanel Margin="24">
-                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="{Binding Title}" FontSize="17" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" Foreground="{DynamicResource TextPrimaryBrush}" />
 
                 <TextBlock Text="Nome" Margin="0,20,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
@@ -32,7 +32,8 @@
                 <StackPanel Orientation="Horizontal">
                     <ComboBox Width="220" ItemsSource="{Binding AvailableTags}"
                               SelectedItem="{Binding SelectedTag}" DisplayMemberPath="Name" />
-                    <Button Content="Limpar" Command="{Binding ClearTagCommand}" Margin="8,0,0,0" Padding="8,4" />
+                    <Button Content="Limpar" Command="{Binding ClearTagCommand}" Margin="8,0,0,0"
+                            Style="{StaticResource LinkButtonStyle}" Foreground="{DynamicResource TextSecondaryBrush}" />
                 </StackPanel>
 
                 <!-- Data/hora (Seção 17): ocultos para tarefa nova (0 TimeEntry) -->
@@ -47,9 +48,9 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
-                        <DatePicker Grid.Column="0" SelectedDate="{Binding StartDate}" IsEnabled="{Binding CanEditDates}" />
+                        <components:DateField Grid.Column="0" SelectedDate="{Binding StartDate}" IsEnabled="{Binding CanEditDates}" />
                         <TextBox Grid.Column="1" Text="{Binding StartTimeText, UpdateSourceTrigger=PropertyChanged}"
-                                 IsEnabled="{Binding CanEditDates}" Margin="4,0,0,0" Padding="4" ToolTip="HH:mm" />
+                                 IsEnabled="{Binding CanEditDates}" Margin="4,0,0,0" ToolTip="HH:mm" />
                     </Grid>
 
                     <TextBlock Text="Data de término" Margin="0,12,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
@@ -58,9 +59,9 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
-                        <DatePicker Grid.Column="0" SelectedDate="{Binding EndDate}" IsEnabled="{Binding CanEditEndDate}" />
+                        <components:DateField Grid.Column="0" SelectedDate="{Binding EndDate}" IsEnabled="{Binding CanEditEndDate}" />
                         <TextBox Grid.Column="1" Text="{Binding EndTimeText, UpdateSourceTrigger=PropertyChanged}"
-                                 IsEnabled="{Binding CanEditEndDate}" Margin="4,0,0,0" Padding="4" ToolTip="HH:mm" />
+                                 IsEnabled="{Binding CanEditEndDate}" Margin="4,0,0,0" ToolTip="HH:mm" />
                     </Grid>
                     <TextBlock Text="Em andamento — pause ou pare o timer para editar o término" FontSize="11"
                                Opacity="0.6" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap"
@@ -80,11 +81,10 @@
                            Visibility="{Binding ErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
-                    <Button Content="Cancelar" Command="{Binding CancelCommand}" Padding="16,8" Margin="0,0,8,0"
-                            Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" />
-                    <Button Content="Salvar" Command="{Binding SaveCommand}" Padding="16,8"
-                            Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}" BorderThickness="0" />
+                    <Button Content="Cancelar" Command="{Binding CancelCommand}" Margin="0,0,8,0"
+                            Style="{StaticResource SecondaryButtonStyle}" />
+                    <Button Content="Salvar" Command="{Binding SaveCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}" />
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
@@ -98,7 +98,7 @@
 
         <TextBlock Grid.Row="0" Text="Hoje" FontSize="14" Opacity="0.6" Foreground="{DynamicResource TextPrimaryBrush}" Margin="24,24,24,8" />
 
-        <ScrollViewer Grid.Row="1" Margin="24,0,24,24">
+        <ScrollViewer Grid.Row="1" Margin="24,0,24,24" VerticalScrollBarVisibility="Hidden">
             <StackPanel>
                 <TextBlock Text="{Binding ListErrorMessage}" Foreground="{DynamicResource DangerBrush}" Margin="0,0,0,12"
                            Visibility="{Binding ListErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
@@ -111,10 +111,16 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <Button Content="+ Nova tarefa" Command="{Binding OpenNewTaskCommand}"
-                        HorizontalAlignment="Center" Margin="0,16,0,0" Padding="16,8"
-                        Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}"
-                        BorderThickness="0" Cursor="Hand" />
+                <Button Command="{Binding OpenNewTaskCommand}"
+                        HorizontalAlignment="Center" Margin="0,16,0,0"
+                        Style="{StaticResource PrimaryButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource SquarePlusIconGeometry}"
+                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Stretch="Uniform" Width="15" Height="15" Margin="0,0,6,0" />
+                        <TextBlock Text="Nova tarefa" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </ScrollViewer>
 
@@ -129,7 +135,34 @@
         <Border Grid.RowSpan="2" HorizontalAlignment="Right" Width="360" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
                 Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
-            <ContentControl Content="{Binding Editor}" />
+            <Border.RenderTransform>
+                <TranslateTransform X="360" />
+            </Border.RenderTransform>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEditorOpen}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X" To="0" Duration="0:0:0.18" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X" To="360" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                <ContentControl Content="{Binding Editor}" />
+            </ScrollViewer>
         </Border>
 
         <!-- Confirmação de exclusão (Seção 23, componente da Seção 30) -->

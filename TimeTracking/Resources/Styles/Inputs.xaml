@@ -1,0 +1,134 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Estilos implícitos (sem x:Key): aplicam-se a todo TextBox/ComboBox/DatePicker da
+         aplicação automaticamente, sem precisar referenciar em cada View (Seção 30). -->
+
+    <!-- Template próprio: o TextBox padrão do WPF traz um contorno azul de foco/hover embutido
+         no chrome do tema do SO, que ignora BorderBrush simples — por isso precisa de
+         ControlTemplate completo aqui (mesmo motivo do ComboBox abaixo). -->
+    <Style TargetType="TextBox">
+        <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8" />
+        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="SelectionBrush" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Border" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6" SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.6" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ComboBoxItem: o template padrão do WPF não respeita Background/Foreground simples
+         nem no chrome fechado nem nos itens do dropdown — por isso ambos têm ControlTemplate
+         próprio aqui. -->
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}">
+                        <ContentPresenter Margin="{TemplateBinding Padding}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="ComboBox">
+        <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton x:Name="ToggleButton"
+                                      Background="{TemplateBinding Background}"
+                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}"
+                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                      ClickMode="Press" Focusable="False">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="24" />
+                                            </Grid.ColumnDefinitions>
+                                            <Path Grid.Column="1" Data="M0,0 L4,4 L8,0 Z"
+                                                  Fill="{DynamicResource TextSecondaryBrush}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+                        <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center" HorizontalAlignment="Left" />
+                        <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}"
+                               AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                            <Border Background="{DynamicResource SurfaceElevatedBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                    MaxHeight="200" CornerRadius="6" Margin="0,2,0,0">
+                                <ScrollViewer SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.6" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- DatePicker nativo não é mais usado em lugar nenhum do app — substituído por
+         components:DateField (ver Views/Components/DateField.xaml), que não depende da
+         amarração interna do DatePicker entre PART_Button/PART_Popup/PART_Calendar (essa
+         amarração exige um Calendar de verdade; ao trocar por um componente próprio ali, o
+         popup parava de abrir e a digitação de data parava de funcionar). -->
+</ResourceDictionary>

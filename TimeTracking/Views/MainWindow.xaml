@@ -9,10 +9,12 @@
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="Time Tracking"
+        Icon="/Resources/Icons/AppIcon.ico"
         Height="600" Width="960"
         MinHeight="480" MinWidth="720"
         Background="{DynamicResource BackgroundBrush}"
-        Foreground="{DynamicResource TextPrimaryBrush}">
+        Foreground="{DynamicResource TextPrimaryBrush}"
+        FontFamily="{StaticResource AppFontFamily}">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
@@ -36,11 +38,13 @@
         <Border DockPanel.Dock="Top" Height="48" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Content="&#9776;" Command="{Binding ToggleSidebarCommand}"
-                        Width="48" Height="48" FontSize="18"
-                        Background="Transparent" BorderThickness="0"
-                        Foreground="{DynamicResource TextPrimaryBrush}" Cursor="Hand" />
-                <TextBlock Text="{Binding PageTitle}" FontSize="16" FontWeight="SemiBold"
+                <Button Command="{Binding ToggleSidebarCommand}"
+                        Style="{StaticResource IconButtonStyle}"
+                        Width="48" Height="48">
+                    <Path Data="{StaticResource HamburgerIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                          Stretch="Uniform" Width="18" Height="18" />
+                </Button>
+                <TextBlock Text="{Binding PageTitle}" FontSize="15" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
                            Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0" />
             </StackPanel>
         </Border>

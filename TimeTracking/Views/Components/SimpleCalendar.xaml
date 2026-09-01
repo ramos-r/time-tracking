@@ -1,0 +1,79 @@
+<UserControl x:Class="TimeTracking.Views.Components.SimpleCalendar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             KeyboardNavigation.TabNavigation="None"
+             mc:Ignorable="d" Width="252">
+    <!-- Calendário próprio (Seção de temas): o Calendar padrão do WPF atribui Style explícito
+         aos próprios dias/botões internamente, que nenhum Style implícito por TargetType
+         consegue sobrepor sem recriar todo o ControlTemplate do CalendarItem — e mesmo assim
+         o fundo/hover não segue o tema (fica sempre branco/azul do SO). Este componente
+         substitui o popup do calendário por uma grade de dias inteiramente nossa, nos mesmos
+         tons de cinza/branco do tema ativo, sem cor de destaque. -->
+    <UserControl.Resources>
+        <Style x:Key="CalendarNavButtonStyle" TargetType="Button" BasedOn="{StaticResource IconButtonStyle}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+        <Style x:Key="CalendarDayCellStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyLight}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,6" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CalendarWeekdayHeaderStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel Margin="8">
+        <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="&#8249;" Style="{StaticResource CalendarNavButtonStyle}" Click="PreviousMonth_Click" />
+            <TextBlock x:Name="MonthYearText" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       FontFamily="{StaticResource AppFontFamilyLight}" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
+            <Button Grid.Column="2" Content="&#8250;" Style="{StaticResource CalendarNavButtonStyle}" Click="NextMonth_Click" />
+        </Grid>
+
+        <UniformGrid Columns="7" Rows="1">
+            <TextBlock Text="S" Style="{StaticResource CalendarWeekdayHeaderStyle}" />
+            <TextBlock Text="M" Style="{StaticResource CalendarWeekdayHeaderStyle}" />
+            <TextBlock Text="T" Style="{StaticResource CalendarWeekdayHeaderStyle}" />
+            <TextBlock Text="W" Style="{StaticResource CalendarWeekdayHeaderStyle}" />
+            <TextBlock Text="T" Style="{StaticResource CalendarWeekdayHeaderStyle}" />
+            <TextBlock Text="F" Style="{StaticResource CalendarWeekdayHeaderStyle}" />
+            <TextBlock Text="S" Style="{StaticResource CalendarWeekdayHeaderStyle}" />
+        </UniformGrid>
+
+        <UniformGrid x:Name="DaysPanel" Columns="7" Rows="6" />
+    </StackPanel>
+</UserControl>
