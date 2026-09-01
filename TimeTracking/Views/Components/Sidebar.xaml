@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:TimeTracking.ViewModels"
+             xmlns:converters="clr-namespace:TimeTracking.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
              Width="240"
@@ -11,43 +12,84 @@
              ClipToBounds="True">
 
     <UserControl.Resources>
+        <converters:ObjectEqualsConverter x:Key="ObjectEquals" />
+
         <Style x:Key="NavButton" TargetType="Button">
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="Padding" Value="16,12" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyLight}" />
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Root" Background="{TemplateBinding Background}">
+                        <Border Background="{TemplateBinding Background}">
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               HorizontalAlignment="Left"
                                               VerticalAlignment="Center" />
                         </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+                </Trigger>
+                <DataTrigger Value="True">
+                    <DataTrigger.Binding>
+                        <MultiBinding Converter="{StaticResource ObjectEquals}">
+                            <Binding Path="CommandParameter" RelativeSource="{RelativeSource Self}" />
+                            <Binding Path="CurrentPage" />
+                        </MultiBinding>
+                    </DataTrigger.Binding>
+                    <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="NavIcon" TargetType="Path">
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Stretch" Value="Uniform" />
+            <Setter Property="Margin" Value="0,0,12,0" />
+            <Setter Property="Fill" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
         </Style>
     </UserControl.Resources>
 
     <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
         <StackPanel Margin="0,16,0,0">
-            <Button Content="Time Tracking" Style="{StaticResource NavButton}"
-                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.TimeTracking}" />
-            <Button Content="Tags" Style="{StaticResource NavButton}"
-                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.Tags}" />
-            <Button Content="Pomodoro" Style="{StaticResource NavButton}"
-                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.Pomodoro}" />
-            <Button Content="Settings" Style="{StaticResource NavButton}"
-                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.Settings}" />
+            <Button Style="{StaticResource NavButton}"
+                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.TimeTracking}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource TimeTrackingIconGeometry}" Style="{StaticResource NavIcon}" />
+                    <TextBlock Text="Time Tracking" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource NavButton}"
+                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.Tags}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource TagsIconGeometry}" Style="{StaticResource NavIcon}" />
+                    <TextBlock Text="Tags" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource NavButton}"
+                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.Pomodoro}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource PomodoroIconGeometry}" Style="{StaticResource NavIcon}" />
+                    <TextBlock Text="Pomodoro" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource NavButton}"
+                    Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.Settings}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource SettingsIconGeometry}" Style="{StaticResource NavIcon}" />
+                    <TextBlock Text="Settings" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
         </StackPanel>
     </Border>
 </UserControl>

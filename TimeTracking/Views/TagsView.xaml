@@ -16,7 +16,7 @@
 
         <DataTemplate DataType="{x:Type vm:TagEditorViewModel}">
             <StackPanel Margin="24">
-                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="{Binding Title}" FontSize="17" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" Foreground="{DynamicResource TextPrimaryBrush}" />
 
                 <TextBlock Text="Nome" Margin="0,20,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
@@ -38,7 +38,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Button Width="28" Height="28" Margin="0,0,8,8" Background="{Binding}"
-                                    BorderThickness="2"
+                                    BorderThickness="2" Cursor="Hand"
                                     Command="{Binding DataContext.SelectColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     CommandParameter="{Binding}">
                                 <Button.BorderBrush>
@@ -49,9 +49,14 @@
                                 </Button.BorderBrush>
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
-                                        <Ellipse Fill="{TemplateBinding Background}"
+                                        <Ellipse x:Name="Dot" Fill="{TemplateBinding Background}"
                                                  Stroke="{TemplateBinding BorderBrush}"
                                                  StrokeThickness="2" />
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Dot" Property="Opacity" Value="0.8" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
@@ -68,11 +73,10 @@
                            Visibility="{Binding ErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
-                    <Button Content="Cancelar" Command="{Binding CancelCommand}" Padding="16,8" Margin="0,0,8,0"
-                            Background="Transparent" Foreground="{DynamicResource TextPrimaryBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" />
-                    <Button Content="Salvar" Command="{Binding SaveCommand}" Padding="16,8"
-                            Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}" BorderThickness="0" />
+                    <Button Content="Cancelar" Command="{Binding CancelCommand}" Margin="0,0,8,0"
+                            Style="{StaticResource SecondaryButtonStyle}" />
+                    <Button Content="Salvar" Command="{Binding SaveCommand}"
+                            Style="{StaticResource PrimaryButtonStyle}" />
                 </StackPanel>
             </StackPanel>
         </DataTemplate>
@@ -84,9 +88,9 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Tags" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" Margin="24,24,24,8" />
+        <TextBlock Grid.Row="0" Text="Tags" FontSize="22" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" Foreground="{DynamicResource TextPrimaryBrush}" Margin="24,24,24,8" />
 
-        <ScrollViewer Grid.Row="1" Margin="24,0,24,24">
+        <ScrollViewer Grid.Row="1" Margin="24,0,24,24" VerticalScrollBarVisibility="Hidden">
             <StackPanel>
                 <TextBlock Text="{Binding ListErrorMessage}" Foreground="{DynamicResource DangerBrush}" Margin="0,0,0,12"
                            Visibility="{Binding ListErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
@@ -94,9 +98,7 @@
                 <ItemsControl ItemsSource="{Binding Tags}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1" CornerRadius="8"
-                                    Padding="16" Margin="0,0,0,8">
+                            <Border Style="{StaticResource CardBorderStyle}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
@@ -106,23 +108,34 @@
                                     <StackPanel Grid.Column="0">
                                         <StackPanel Orientation="Horizontal">
                                             <Ellipse Width="12" Height="12" Fill="{Binding Color}" VerticalAlignment="Center" />
-                                            <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
+                                            <TextBlock Text="{Binding Name}" FontSize="14" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
                                                        Foreground="{DynamicResource TextPrimaryBrush}" Margin="8,0,0,0" />
                                         </StackPanel>
                                         <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
                                                    Margin="20,4,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
 
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Content="Editar"
-                                                Command="{Binding DataContext.SelectTagCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                Background="Transparent" Foreground="{DynamicResource PrimaryBrush}" BorderThickness="0" Cursor="Hand" />
-                                        <Button Content="Excluir" Margin="8,0,0,0"
-                                                Command="{Binding DataContext.RequestDeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                CommandParameter="{Binding}"
-                                                Background="Transparent" Foreground="{DynamicResource DangerBrush}" BorderThickness="0" Cursor="Hand" />
-                                    </StackPanel>
+                                    <!-- Menu "..." (Editar/Excluir): substitui os botões de texto fixos, igual ao card de tarefa -->
+                                    <Button Grid.Column="1" ToolTip="Mais opções" VerticalAlignment="Center"
+                                            Style="{StaticResource IconButtonStyle}"
+                                            Width="36" Height="36"
+                                            Click="MoreButton_Click"
+                                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
+                                        <Button.ContextMenu>
+                                            <ContextMenu Style="{StaticResource ThemedContextMenuStyle}"
+                                                         DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                                <MenuItem Header="Editar" Style="{StaticResource ThemedMenuItemStyle}"
+                                                          Command="{Binding SelectTagCommand}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <MenuItem Header="Excluir" Style="{StaticResource ThemedMenuItemStyle}"
+                                                          Foreground="{DynamicResource DangerBrush}"
+                                                          Command="{Binding RequestDeleteCommand}"
+                                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                        <Path Data="{StaticResource MoreIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
+                                              Stretch="Uniform" Width="18" Height="18" />
+                                    </Button>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -130,9 +143,8 @@
                 </ItemsControl>
 
                 <Button Content="+ Nova tag" Command="{Binding OpenNewTagCommand}"
-                        HorizontalAlignment="Center" Margin="0,16,0,0" Padding="16,8"
-                        Background="{DynamicResource PrimaryBrush}" Foreground="{DynamicResource OnPrimaryBrush}"
-                        BorderThickness="0" Cursor="Hand" />
+                        HorizontalAlignment="Center" Margin="0,16,0,0"
+                        Style="{StaticResource PrimaryButtonStyle}" />
             </StackPanel>
         </ScrollViewer>
 
@@ -147,6 +159,31 @@
         <Border Grid.RowSpan="2" HorizontalAlignment="Right" Width="360" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
                 Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
+            <Border.RenderTransform>
+                <TranslateTransform X="360" />
+            </Border.RenderTransform>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsEditorOpen}" Value="True">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X" To="0" Duration="0:0:0.18" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X" To="360" Duration="0:0:0.15" />
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <ContentControl Content="{Binding Editor}" />
         </Border>
 

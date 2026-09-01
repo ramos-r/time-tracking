@@ -19,11 +19,11 @@
     <Grid ClipToBounds="True">
         <ScrollViewer Margin="24">
             <StackPanel MaxWidth="420" HorizontalAlignment="Left">
-                <TextBlock Text="Settings" FontSize="24" FontWeight="Bold"
+                <TextBlock Text="Settings" FontSize="22" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,24" />
 
                 <!-- Aparência -->
-                <TextBlock Text="Aparência" FontSize="16" FontWeight="SemiBold"
+                <TextBlock Text="Aparência" FontSize="15" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
                 <TextBlock Text="Tema" FontSize="12" Opacity="0.7"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
@@ -42,12 +42,40 @@
                 <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,24" />
 
                 <!-- Dados -->
-                <TextBlock Text="Dados" FontSize="16" FontWeight="SemiBold"
+                <TextBlock Text="Dados" FontSize="15" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
                 <Button Content="Limpar histórico" Command="{Binding RequestClearHistoryCommand}"
-                        HorizontalAlignment="Left" Padding="16,8" Cursor="Hand"
-                        Background="Transparent" Foreground="{DynamicResource DangerBrush}"
-                        BorderBrush="{DynamicResource DangerBrush}" BorderThickness="1" />
+                        HorizontalAlignment="Left" Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                            <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}" />
+                            <Setter Property="BorderThickness" Value="1" />
+                            <Setter Property="Padding" Value="16,8" />
+                            <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyLight}" />
+                            <Setter Property="FontSize" Value="13" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bg" Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource DangerBrush}" />
+                                                <Setter Property="Foreground" Value="White" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
                 <TextBlock Text="{Binding StatusMessage}" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"
                            Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVisibility}}">
                     <TextBlock.Style>
@@ -65,7 +93,7 @@
                 <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,24" />
 
                 <!-- Sobre -->
-                <TextBlock Text="Sobre" FontSize="16" FontWeight="SemiBold"
+                <TextBlock Text="Sobre" FontSize="15" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
                            Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8" />
                 <TextBlock Text="Time Tracking" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,4,0,0">

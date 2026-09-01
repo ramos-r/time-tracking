@@ -3,10 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:TimeTracking.Converters"
              mc:Ignorable="d"
              x:Name="Root">
+    <UserControl.Resources>
+        <converters:ColorContrastTextConverter x:Key="ColorContrastText" />
+    </UserControl.Resources>
     <Border Background="{Binding TagItem.Color, ElementName=Root}"
-            CornerRadius="10" Padding="8,2" HorizontalAlignment="Left">
-        <TextBlock Text="{Binding TagItem.Name, ElementName=Root}" FontSize="11" Foreground="White" />
+            CornerRadius="10" Padding="12,4" HorizontalAlignment="Left">
+        <TextBlock Text="{Binding TagItem.Name, ElementName=Root}" FontSize="11"
+                   Foreground="{Binding TagItem.Color, ElementName=Root, Converter={StaticResource ColorContrastText}}" />
     </Border>
 </UserControl>
