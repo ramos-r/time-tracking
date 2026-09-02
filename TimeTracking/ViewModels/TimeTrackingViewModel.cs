@@ -46,6 +46,29 @@ public partial class TimeTrackingViewModel : ObservableObject
 
     private TaskListItemViewModel? _pendingPlayTarget;
 
+    // Seleção múltipla para exclusão em lote — adicional ao menu "..."/clique direito
+    // individual (que continuam intactos e funcionando independente deste modo).
+    [ObservableProperty]
+    private bool _isSelectionMode;
+
+    [ObservableProperty]
+    private bool _isBulkDeleteConfirmOpen;
+
+    private readonly HashSet<int> _selectedTaskIds = new();
+
+    public bool HasSelection => _selectedTaskIds.Count > 0;
+
+    public string SelectedCountDisplay => _selectedTaskIds.Count switch
+    {
+        0 => "Nenhuma tarefa selecionada",
+        1 => "1 tarefa selecionada",
+        _ => $"{_selectedTaskIds.Count} tarefas selecionadas"
+    };
+
+    public string BulkDeleteConfirmMessage =>
+        $"Tem certeza que deseja excluir {_selectedTaskIds.Count} {(_selectedTaskIds.Count == 1 ? "tarefa" : "tarefas")}? " +
+        "Todo o tempo registrado para elas também será removido.";
+
     public string DeleteConfirmMessage =>
         $"Tem certeza que deseja excluir \"{PendingDelete?.Name}\"? Todo o tempo registrado para ela também será removido.";
 
@@ -99,6 +122,7 @@ public partial class TimeTrackingViewModel : ObservableObject
                 var item = new TaskListItemViewModel(task);
                 var status = await _timerService.GetStatusAsync(task.Id);
                 item.ApplyStatus(status, now);
+                item.IsSelected = _selectedTaskIds.Contains(task.Id);
                 items.Add(item);
             }
 
@@ -138,12 +162,18 @@ public partial class TimeTrackingViewModel : ObservableObject
                 PauseCommand,
                 StopCommand,
                 SelectTaskCommand,
-                RequestDeleteCommand));
+                RequestDeleteCommand,
+                IsSelectionMode));
         }
 
         DayGroups = groups;
         UpdateForcedExpansion();
     }
+
+    // Alternar o modo de seleção não recarrega o banco — só precisa reconstruir os grupos
+    // (operação local, barata) para que cada DayGroupViewModel novo nasça com o
+    // IsSelectionMode atual (ver comentário na própria propriedade).
+    partial void OnIsSelectionModeChanged(bool value) => RebuildDayGroups(_clock.UtcNow);
 
     /// <summary>Atualiza HasRunningTask de cada grupo — o próprio DayGroupViewModel força
     /// IsExpanded quando ele passa a ter uma tarefa em execução (Seção 68, item 7).</summary>
@@ -250,11 +280,106 @@ public partial class TimeTrackingViewModel : ObservableObject
     [RelayCommand]
     private async Task SelectTaskAsync(TaskListItemViewModel item)
     {
+        // No modo de seleção múltipla, clicar no card alterna a seleção em vez de abrir o
+        // editor — reaproveita o mesmo comando/gesto já ligado ao clique do TaskCard, sem
+        // precisar de nenhuma mudança no XAML.
+        if (IsSelectionMode)
+        {
+            ToggleTaskSelection(item);
+            return;
+        }
+
         var editor = _editorFactory();
         AttachEditorHandlers(editor);
         await editor.LoadForEditAsync(item.Id);
         Editor = editor;
         IsEditorOpen = true;
+    }
+
+    [RelayCommand]
+    private void ToggleSelectionMode()
+    {
+        IsSelectionMode = !IsSelectionMode;
+        if (!IsSelectionMode)
+        {
+            ClearSelection();
+        }
+    }
+
+    [RelayCommand]
+    private void CancelSelectionMode()
+    {
+        IsSelectionMode = false;
+        ClearSelection();
+    }
+
+    private void ToggleTaskSelection(TaskListItemViewModel item)
+    {
+        item.IsSelected = !item.IsSelected;
+        if (item.IsSelected)
+        {
+            _selectedTaskIds.Add(item.Id);
+        }
+        else
+        {
+            _selectedTaskIds.Remove(item.Id);
+        }
+
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedCountDisplay));
+    }
+
+    private void ClearSelection()
+    {
+        _selectedTaskIds.Clear();
+        foreach (var task in Tasks)
+        {
+            task.IsSelected = false;
+        }
+
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedCountDisplay));
+    }
+
+    [RelayCommand]
+    private void RequestBulkDelete()
+    {
+        if (!HasSelection)
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(BulkDeleteConfirmMessage));
+        IsBulkDeleteConfirmOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task ConfirmBulkDeleteAsync()
+    {
+        var idsToDelete = _selectedTaskIds.ToList();
+        IsBulkDeleteConfirmOpen = false;
+
+        try
+        {
+            foreach (var id in idsToDelete)
+            {
+                await _taskService.DeleteAsync(id);
+            }
+
+            IsSelectionMode = false;
+            ClearSelection();
+            await LoadTasksAsync();
+        }
+        catch (Exception)
+        {
+            ListErrorMessage = "Não foi possível excluir as tarefas selecionadas. Tente novamente.";
+        }
+    }
+
+    [RelayCommand]
+    private void CancelBulkDelete()
+    {
+        IsBulkDeleteConfirmOpen = false;
     }
 
     private void AttachEditorHandlers(TaskEditorViewModel editor)

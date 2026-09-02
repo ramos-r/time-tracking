@@ -26,6 +26,11 @@ public partial class DayGroupViewModel : ObservableObject
     public ICommand SelectTaskCommand { get; }
     public ICommand RequestDeleteCommand { get; }
 
+    /// <summary>Repassado da TimeTrackingViewModel (seleção múltipla para exclusão em lote).
+    /// Não precisa de notificação própria: alternar o modo de seleção reconstrói os grupos
+    /// (RebuildDayGroups), então cada DayGroupViewModel novo já nasce com o valor atual.</summary>
+    public bool IsSelectionMode { get; }
+
     [ObservableProperty]
     private TimeSpan _totalDuration;
 
@@ -48,7 +53,8 @@ public partial class DayGroupViewModel : ObservableObject
         ICommand pauseCommand,
         ICommand stopCommand,
         ICommand selectTaskCommand,
-        ICommand requestDeleteCommand)
+        ICommand requestDeleteCommand,
+        bool isSelectionMode)
     {
         Date = date;
         IsToday = isToday;
@@ -61,6 +67,7 @@ public partial class DayGroupViewModel : ObservableObject
         StopCommand = stopCommand;
         SelectTaskCommand = selectTaskCommand;
         RequestDeleteCommand = requestDeleteCommand;
+        IsSelectionMode = isSelectionMode;
     }
 
     partial void OnTotalDurationChanged(TimeSpan value) => OnPropertyChanged(nameof(TotalDurationDisplay));

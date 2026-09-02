@@ -108,11 +108,16 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
+            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                        Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVisibility}}">
+                <Button Command="{Binding ToggleSelectionModeCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0">
+                    <TextBlock Text="Selecionar" />
+                </Button>
                 <Button Command="{Binding StartQuickTaskCommand}"
                         Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0">
                     <StackPanel Orientation="Horizontal">
-                        <Path Data="{StaticResource PlayIconGeometry}"
+                        <Path Data="{StaticResource PlayAltIconGeometry}"
                               Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                               Stretch="Uniform" Width="15" Height="15" Margin="0,0,6,0" />
                         <TextBlock Text="Iniciar timer" VerticalAlignment="Center" />
@@ -126,6 +131,23 @@
                               Stretch="Uniform" Width="15" Height="15" Margin="0,0,6,0" />
                         <TextBlock Text="Nova tarefa" VerticalAlignment="Center" />
                     </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- Modo de seleção múltipla (exclusão em lote) — adicional ao menu "..."/clique
+                 direito individual, que continuam funcionando normalmente em qualquer modo. -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal"
+                        Visibility="{Binding IsSelectionMode, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="{Binding SelectedCountDisplay}" VerticalAlignment="Center" Margin="0,0,16,0"
+                           FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" />
+                <Button Command="{Binding CancelSelectionModeCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0">
+                    <TextBlock Text="Cancelar" />
+                </Button>
+                <Button Command="{Binding RequestBulkDeleteCommand}"
+                        IsEnabled="{Binding HasSelection}"
+                        Style="{StaticResource DangerButtonStyle}">
+                    <TextBlock Text="Excluir selecionadas" />
                 </Button>
             </StackPanel>
         </Grid>
@@ -194,6 +216,17 @@
                                        ConfirmText="Excluir" CancelText="Cancelar"
                                        ConfirmCommand="{Binding ConfirmDeleteCommand}"
                                        CancelCommand="{Binding CancelDeleteCommand}" />
+        </Border>
+
+        <!-- Confirmação de exclusão em lote (seleção múltipla) — diálogo próprio, não
+             interfere com a confirmação de exclusão individual acima. -->
+        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
+                Visibility="{Binding IsBulkDeleteConfirmOpen, Converter={StaticResource BoolToVisibility}}">
+            <components:ConfirmDialog Title="Excluir tarefas selecionadas?"
+                                       Message="{Binding BulkDeleteConfirmMessage}"
+                                       ConfirmText="Excluir" CancelText="Cancelar"
+                                       ConfirmCommand="{Binding ConfirmBulkDeleteCommand}"
+                                       CancelCommand="{Binding CancelBulkDeleteCommand}" />
         </Border>
 
         <!-- Conflito de timer: só uma tarefa ativa por vez (Seção 15) — não é destrutivo -->

@@ -12,21 +12,63 @@
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
     </UserControl.Resources>
 
-    <Border Style="{StaticResource CardBorderStyle}" Cursor="Hand">
+    <Border Style="{StaticResource CardBorderStyle}" Cursor="Hand"
+            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=ItemsControl}}">
         <Border.InputBindings>
             <MouseBinding MouseAction="LeftClick"
                           Command="{Binding DataContext.SelectTaskCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                           CommandParameter="{Binding}" />
         </Border.InputBindings>
+        <!-- Clique direito: mesmo menu Editar/Excluir do botão "...", como atalho adicional.
+             Instância própria de ContextMenu — não reaproveita a do botão "..." abaixo, que
+             permanece intocada. -->
+        <Border.ContextMenu>
+            <ContextMenu Style="{StaticResource ThemedContextMenuStyle}"
+                         DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                <MenuItem Header="Editar" Style="{StaticResource ThemedMenuItemStyle}"
+                          Command="{Binding SelectTaskCommand}"
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                <MenuItem Header="Excluir" Style="{StaticResource ThemedMenuItemStyle}"
+                          Foreground="{DynamicResource DangerBrush}"
+                          Command="{Binding RequestDeleteCommand}"
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+            </ContextMenu>
+        </Border.ContextMenu>
         <Grid>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0">
+            <!-- Indicador de seleção (modo de seleção múltipla): puramente visual, o clique
+                 no card inteiro (MouseBinding acima) é quem alterna a seleção. -->
+            <Border Grid.Column="0" Width="20" Height="20" CornerRadius="5" BorderThickness="1.5"
+                    VerticalAlignment="Center" Margin="0,0,12,0"
+                    Visibility="{Binding DataContext.IsSelectionMode, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}">
+                <!-- Background/BorderBrush ficam só no Style (nunca como atributo local no
+                     Border): um valor local sempre vence um Setter de Style.Triggers no WPF,
+                     o que faria o DataTrigger de IsSelected nunca ter efeito visual. -->
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Path Data="M0,3.5 L3,6.5 L8,0.5" Stretch="Uniform" Width="10" Height="10"
+                      Stroke="White" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                      Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibility}}" />
+            </Border>
+
+            <StackPanel Grid.Column="1">
                 <TextBlock Text="{Binding Name}" FontSize="14" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <TextBlock Text="{Binding Description}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"
                            TextWrapping="Wrap"
@@ -35,43 +77,45 @@
                                      Visibility="{Binding Tag, Converter={StaticResource NullOrEmptyToVisibility}}" />
             </StackPanel>
 
-            <TextBlock Grid.Column="1" Text="{Binding ElapsedDisplay}" FontFamily="Consolas"
+            <TextBlock Grid.Column="2" Text="{Binding ElapsedDisplay}" FontFamily="Consolas"
                        FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="12,0" />
 
-            <!-- Botão Play: visível apenas quando esta tarefa NÃO está em execução (Seção 11) -->
-            <Button Grid.Column="2" ToolTip="Iniciar" VerticalAlignment="Center"
-                    Style="{StaticResource IconButtonStyle}"
+            <!-- Botão Play: visível apenas quando esta tarefa NÃO está em execução (Seção 11).
+                 Tamanho aumentado (36->44) para facilitar o clique — estilo próprio
+                 (IconButtonLargeStyle) que não afeta o hambúrguer/"..."/navegação do calendário. -->
+            <Button Grid.Column="3" ToolTip="Iniciar" VerticalAlignment="Center"
+                    Style="{StaticResource IconButtonLargeStyle}"
                     Visibility="{Binding IsRunning, Converter={StaticResource InverseBoolToVisibility}}"
                     Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}"
-                    Width="36" Height="36">
+                    Width="44" Height="44">
                 <Path Data="{StaticResource PlayIconGeometry}" Fill="{DynamicResource PrimaryBrush}"
-                      Stretch="Uniform" Width="18" Height="18" />
+                      Stretch="Uniform" Width="20" Height="20" />
             </Button>
 
             <!-- Pause/Stop: visíveis apenas quando esta é a tarefa em execução (Seção 12/14) -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal"
+            <StackPanel Grid.Column="3" Orientation="Horizontal"
                         Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}">
                 <Button ToolTip="Pausar" VerticalAlignment="Center"
-                        Style="{StaticResource IconButtonStyle}"
+                        Style="{StaticResource IconButtonLargeStyle}"
                         Command="{Binding DataContext.PauseCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                         CommandParameter="{Binding}"
-                        Width="36" Height="36">
+                        Width="44" Height="44">
                     <Path Data="{StaticResource PauseIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
-                          Stretch="Uniform" Width="18" Height="18" />
+                          Stretch="Uniform" Width="20" Height="20" />
                 </Button>
                 <Button ToolTip="Parar" VerticalAlignment="Center"
-                        Style="{StaticResource IconButtonStyle}"
+                        Style="{StaticResource IconButtonLargeStyle}"
                         Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                         CommandParameter="{Binding}"
-                        Width="36" Height="36">
+                        Width="44" Height="44">
                     <Path Data="{StaticResource StopIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
-                          Stretch="Uniform" Width="18" Height="18" />
+                          Stretch="Uniform" Width="20" Height="20" />
                 </Button>
             </StackPanel>
 
             <!-- Menu "..." (Editar/Excluir): substitui os botões de texto fixos fora da área de edição -->
-            <Button Grid.Column="3" ToolTip="Mais opções" VerticalAlignment="Center"
+            <Button Grid.Column="4" ToolTip="Mais opções" VerticalAlignment="Center"
                     Style="{StaticResource IconButtonStyle}"
                     Width="36" Height="36"
                     Margin="4,0,0,0"

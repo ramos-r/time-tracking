@@ -23,6 +23,9 @@ public partial class TaskListItemViewModel : ObservableObject
     private bool _isRunning;
 
     [ObservableProperty]
+    private bool _isSelected;
+
+    [ObservableProperty]
     private TimeSpan _elapsed;
 
     public string ElapsedDisplay =>

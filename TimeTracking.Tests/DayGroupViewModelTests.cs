@@ -23,7 +23,8 @@ public class DayGroupViewModelTests
             noOp,
             noOp,
             noOp,
-            noOp);
+            noOp,
+            isSelectionMode: false);
     }
 
     private static TaskListItemViewModel CreateTaskItem(int id, string name) =>
