@@ -234,6 +234,51 @@ public class TimerServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task AddManualEntryAsync_Creates_A_Closed_Entry_With_The_Given_Timestamps()
+    {
+        var timer = CreateTimerService();
+        var taskId = await CreateTaskAsync("Tarefa retroativa");
+
+        var start = _clock.UtcNow.AddDays(-1);
+        var end = start.AddHours(2);
+
+        await timer.AddManualEntryAsync(taskId, start, end);
+
+        var status = await timer.GetStatusAsync(taskId);
+        Assert.False(status.IsRunning);
+        Assert.Equal(TimeSpan.FromHours(2), status.ClosedEntriesTotal);
+    }
+
+    [Fact]
+    public async Task AddManualEntryAsync_With_Equal_Start_And_End_Produces_A_Paused_Zero_Duration_Entry()
+    {
+        // Criação via "Nova tarefa" com só a data de início preenchida (Seção 68 — ajuste):
+        // a sessão fica registrada, mas pausada, nunca em execução.
+        var timer = CreateTimerService();
+        var taskId = await CreateTaskAsync("Tarefa pausada na criação");
+
+        var moment = _clock.UtcNow.AddHours(-3);
+        await timer.AddManualEntryAsync(taskId, moment, moment);
+
+        var status = await timer.GetStatusAsync(taskId);
+        Assert.False(status.IsRunning);
+        Assert.Equal(TimeSpan.Zero, status.ClosedEntriesTotal);
+
+        var active = await timer.GetActiveTaskAsync();
+        Assert.Null(active);
+    }
+
+    [Fact]
+    public async Task AddManualEntryAsync_Rejects_EndBefore_Start()
+    {
+        var timer = CreateTimerService();
+        var taskId = await CreateTaskAsync("Tarefa retroativa inválida");
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            timer.AddManualEntryAsync(taskId, _clock.UtcNow, _clock.UtcNow.AddHours(-1)));
+    }
+
+    [Fact]
     public async Task Editing_Task_Name_Does_Not_Affect_Its_TimeEntries_History_Fase6()
     {
         // Critério de aceite da Fase 6: uma tarefa já encerrada deve poder ser editada

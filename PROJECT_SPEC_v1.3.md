@@ -1,11 +1,14 @@
 # TIME TRACKING APP
 ## Especificação Técnica e Plano de Desenvolvimento — MVP
 
-**Versão:** 1.2
+**Versão:** 1.3
 **Plataforma:** Windows Desktop
 **Tipo:** Aplicação local/offline para controle de tempo de tarefas
 **Banco:** SQLite local
 **Desenvolvimento assistido por Claude Code**
+
+**Changelog:**
+- v1.3 (01/09/2026): adicionada a Seção 68 — Agrupamento retrátil de tarefas por data, com total do dia. Ver nota na Seção 21.
 
 ---
 
@@ -736,6 +739,8 @@ Estrutura visual sugerida:
 ```
 
 O design final pode diferir desse wireframe, desde que respeite as regras funcionais.
+
+**Nota (v1.3):** o agrupamento de tarefas por data, exibido acima apenas com o cabeçalho "Hoje", foi detalhado e estendido para múltiplos dias retráteis com total de horas por dia — ver Seção 68.
 
 ---
 
@@ -2260,5 +2265,55 @@ Primeiro:
 6. aguardar aprovação.
 
 **A implementação só começa após a aprovação explícita da FASE 0.**
+
+---
+
+# 68. FEATURE (v1.3) — AGRUPAMENTO RETRÁTIL DE TAREFAS POR DATA, COM TOTAL DO DIA
+
+## Contexto
+
+Esta seção detalha e substitui, para efeitos de implementação, o agrupamento por data mencionado de forma simplificada na Seção 21 (que só ilustrava o cabeçalho "Hoje"). O objetivo é permitir que o usuário veja rapidamente quanto tempo trabalhou em cada dia da semana, sem precisar rolar por todas as tarefas de todos os dias até encontrar a que deseja.
+
+Referência visual de comportamento (não de estilo — a paleta/tema seguem as Seções 28-29): capturas de tela do protótipo atual do app mostram a lista já organizada com um cabeçalho de data ("Hoje") seguido pelos cards de tarefa daquele dia. Esta feature estende esse padrão para múltiplos grupos de data, cada um retrátil, com o total de horas do dia exibido no próprio cabeçalho.
+
+## Requisito funcional
+
+1. As tarefas da tela Time Tracking (Seção 21) são agrupadas por data — a data é derivada das `TimeEntry` da tarefa (dia em que houve sessão registrada), não da `CreatedAt` da `Task`.
+2. Cada grupo de data possui um cabeçalho fixo (não rola junto com o conteúdo do grupo quando ele está expandido) contendo:
+   - a data formatada (ex.: "Hoje", "Ontem", ou "Seg, 27/02/2026" para dias mais antigos — usar o mesmo padrão de nomenclatura relativa já adotado na Seção 21);
+   - o tempo total trabalhado naquele dia, somando a duração de todas as `TimeEntry` de todas as tarefas daquela data;
+   - um indicador visual (chevron/seta) do estado expandido/recolhido.
+3. Clicar em qualquer parte do cabeçalho expande ou recolhe a lista de tarefas daquele dia, com uma transição de altura suave e discreta (mesma diretriz de animação da Seção 19 — nada exagerado).
+4. Com o grupo recolhido, o cabeçalho permanece visível (data + total do dia), apenas a lista de cards daquele dia fica oculta.
+5. Estado padrão ao carregar a tela: o grupo do dia atual ("Hoje") inicia expandido; os demais grupos iniciam recolhidos. Isso prioriza a visão do dia corrente, que é o objetivo central da Seção 31 (o usuário deve entender imediatamente qual tarefa está ativa e quanto tempo ela está levando).
+6. O estado expandido/recolhido de cada grupo é mantido apenas em memória durante a sessão do aplicativo (não é persistido no banco). Reabrir o aplicativo volta ao estado padrão do item 5.
+7. Uma tarefa com timer em execução (Running) deve manter seu grupo de data sempre expandido automaticamente enquanto o timer estiver ativo, mesmo que o usuário tenha recolhido aquele grupo manualmente — para não esconder acidentalmente a tarefa em andamento.
+
+## Cálculo do total do dia
+
+- Segue estritamente a regra das Seções 8 e 43: nunca persistir a duração como cache. O total do dia é sempre calculado em memória, somando `EndedAt - StartedAt` de cada `TimeEntry` do dia (usando `UtcNow` no lugar de `EndedAt` para uma sessão em aberto).
+- Uma `TimeEntry` que atravessa a meia-noite (inicia em um dia e termina no seguinte) deve ser contabilizada no total do dia em que ela foi iniciada (`StartedAt`), para manter simplicidade no MVP. Não dividir a duração entre os dois dias.
+
+## Arquitetura / onde implementar
+
+- A lógica de agrupamento por data e de soma do tempo total NÃO deve ficar na View. Deve residir na `TimeTrackingViewModel` ou, se fizer sentido para reuso futuro (ex.: pelo Dashboard do backlog, Seção 37), em um método auxiliar do `TaskService`/`TimerService` que a ViewModel consome (Seção 5, "Regra importante").
+- Sugestão de modelo de apresentação: um `DayGroupViewModel` (ou nome equivalente) contendo `Date`, `TotalDuration`, `IsExpanded` e a coleção de tarefas daquele dia, exposto pela `TimeTrackingViewModel` como uma coleção de grupos em vez de uma lista plana de tarefas.
+- O cabeçalho retrátil deve ser um componente reutilizável do design system (Seção 30), com estilo consistente entre tema claro e escuro (Seções 28-29).
+- Não alterar o modelo de dados (`Task`, `Tag`, `TimeEntry`) para viabilizar esta feature — é uma funcionalidade de apresentação/agrupamento sobre os dados já existentes.
+
+## Onde isso se encaixa no plano de fases
+
+Esta feature depende de `Task` e `TimeEntry` já existirem e possuírem dados reais (Fases 2, 4 e 5), e refina a Fase 6 (Painel de Edição) / tela principal da Fase 4. Recomenda-se implementá-la como um incremento pontual após a Fase 5 (Timer) estar concluída e aprovada, seguindo o mesmo formato de encerramento de fase da Seção 64 (o que foi implementado, arquivos alterados, testes realizados, resultado, problemas encontrados, aguardar aprovação).
+
+## Testes a adicionar (Seção 47)
+
+- Duas tarefas com sessões no mesmo dia → total do grupo = soma correta das durações.
+- Tarefas em dias diferentes → aparecem em grupos separados, cada um com seu próprio total.
+- Recolher um grupo → cards ficam ocultos, cabeçalho (data + total) permanece visível.
+- Expandir um grupo recolhido → cards voltam a aparecer.
+- Timer em execução em uma tarefa de um grupo recolhido → grupo expande automaticamente.
+- `TimeEntry` aberta (sem `EndedAt`) → entra no total do dia usando `UtcNow` até o momento do cálculo, sem gerar erro.
+
+---
 
 Fim da especificação.

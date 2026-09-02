@@ -20,6 +20,9 @@ public partial class TimeTrackingViewModel : ObservableObject
     private ObservableCollection<TaskListItemViewModel> _tasks = new();
 
     [ObservableProperty]
+    private ObservableCollection<DayGroupViewModel> _dayGroups = new();
+
+    [ObservableProperty]
     private bool _isEditorOpen;
 
     [ObservableProperty]
@@ -70,6 +73,15 @@ public partial class TimeTrackingViewModel : ObservableObject
         {
             item.Tick(now);
         }
+
+        // Seção 68: o total do dia com timer ativo precisa acompanhar o tick, sempre
+        // recalculado em memória (Seção 43) — nunca lido do banco a cada segundo.
+        var runningGroup = DayGroups.FirstOrDefault(g => g.HasRunningTask);
+        if (runningGroup is not null)
+        {
+            var domainTasks = Tasks.Select(t => t.Task).ToList();
+            runningGroup.TotalDuration = TaskDayGroupBuilder.SumEntriesForDate(domainTasks, runningGroup.Date, now);
+        }
     }
 
     [RelayCommand]
@@ -91,6 +103,7 @@ public partial class TimeTrackingViewModel : ObservableObject
             }
 
             Tasks = new ObservableCollection<TaskListItemViewModel>(items);
+            RebuildDayGroups(now);
         }
         catch (Exception)
         {
@@ -98,10 +111,48 @@ public partial class TimeTrackingViewModel : ObservableObject
         }
     }
 
-    private async Task RefreshTaskStatusAsync(TaskListItemViewModel item)
+    /// <summary>Reconstrói os grupos de data (Seção 68) preservando o estado expandido/
+    /// recolhido de cada data já existente — só o padrão (Hoje aberto, demais fechados)
+    /// se aplica a datas novas que ainda não haviam aparecido nesta sessão.</summary>
+    private void RebuildDayGroups(DateTime nowUtc)
     {
-        var status = await _timerService.GetStatusAsync(item.Id);
-        item.ApplyStatus(status, _clock.UtcNow);
+        var previousExpanded = DayGroups.ToDictionary(g => g.Date, g => g.IsExpanded);
+
+        var domainTasks = Tasks.Select(t => t.Task).ToList();
+        var groupData = TaskDayGroupBuilder.Build(domainTasks, nowUtc);
+        var itemsById = Tasks.ToDictionary(t => t.Id);
+
+        var groups = new ObservableCollection<DayGroupViewModel>();
+        foreach (var data in groupData)
+        {
+            var groupItems = data.Tasks.Select(t => itemsById[t.Id]);
+            var isExpanded = previousExpanded.TryGetValue(data.Date, out var prior) ? prior : data.IsToday;
+
+            groups.Add(new DayGroupViewModel(
+                data.Date,
+                data.IsToday,
+                groupItems,
+                isExpanded,
+                data.TotalDuration,
+                PlayCommand,
+                PauseCommand,
+                StopCommand,
+                SelectTaskCommand,
+                RequestDeleteCommand));
+        }
+
+        DayGroups = groups;
+        UpdateForcedExpansion();
+    }
+
+    /// <summary>Atualiza HasRunningTask de cada grupo — o próprio DayGroupViewModel força
+    /// IsExpanded quando ele passa a ter uma tarefa em execução (Seção 68, item 7).</summary>
+    private void UpdateForcedExpansion()
+    {
+        foreach (var group in DayGroups)
+        {
+            group.HasRunningTask = group.Tasks.Any(t => t.IsRunning);
+        }
     }
 
     [RelayCommand]
@@ -121,18 +172,16 @@ public partial class TimeTrackingViewModel : ObservableObject
         await StartAndRefreshAsync(item);
     }
 
+    /// <summary>Recarrega tudo do banco após qualquer ação do timer (Start/Pause/Stop).
+    /// Necessário porque os DomainTask em memória (Tasks) são snapshots desconectados
+    /// (AsNoTracking, Seção 65) — só um reload garante que TimeEntries reflita a sessão
+    /// recém aberta/encerrada, o que por sua vez é a fonte do total do dia (Seção 68).
+    /// Sem isso, o total do dia ficava travado no valor de antes da ação até a próxima
+    /// tarefa ser criada (o que forçava um LoadTasksAsync por outro caminho).</summary>
     private async Task StartAndRefreshAsync(TaskListItemViewModel item)
     {
         await _timerService.StartAsync(item.Id);
-
-        // A tarefa anteriormente ativa (se houver) também precisa atualizar seu estado.
-        foreach (var task in Tasks)
-        {
-            if (task.IsRunning || task.Id == item.Id)
-            {
-                await RefreshTaskStatusAsync(task);
-            }
-        }
+        await LoadTasksAsync();
     }
 
     [RelayCommand]
@@ -158,14 +207,34 @@ public partial class TimeTrackingViewModel : ObservableObject
     private async Task PauseAsync(TaskListItemViewModel item)
     {
         await _timerService.PauseAsync(item.Id);
-        await RefreshTaskStatusAsync(item);
+        await LoadTasksAsync();
     }
 
     [RelayCommand]
     private async Task StopAsync(TaskListItemViewModel item)
     {
         await _timerService.StopAsync(item.Id);
-        await RefreshTaskStatusAsync(item);
+        await LoadTasksAsync();
+    }
+
+    /// <summary>Cria uma tarefa sem exigir nenhum campo (nome padrão "Nova tarefa") e já
+    /// inicia o timer nela. StartAsync pausa qualquer outra tarefa ativa automaticamente
+    /// (Seção 15) — sem diálogo de confirmação aqui, pois o próprio clique já é a intenção
+    /// explícita do usuário. Não abre o editor: o usuário cria rápido e edita depois.</summary>
+    [RelayCommand]
+    private async Task StartQuickTaskAsync()
+    {
+        try
+        {
+            ListErrorMessage = null;
+            var newTask = await _taskService.CreateAsync("Nova tarefa", null, null);
+            await _timerService.StartAsync(newTask.Id);
+            await LoadTasksAsync();
+        }
+        catch (Exception)
+        {
+            ListErrorMessage = "Não foi possível iniciar a tarefa.";
+        }
     }
 
     [RelayCommand]

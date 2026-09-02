@@ -79,8 +79,13 @@ public partial class TaskEditorViewModel : ObservableObject
     public bool HasNoEntries => TimeEntryCount == 0;
     public bool HasSingleEntry => TimeEntryCount == 1;
     public bool HasMultipleEntries => TimeEntryCount > 1;
-    public bool CanEditDates => HasSingleEntry;
+    public bool CanEditDates => HasSingleEntry || IsNew;
     public bool CanEditEndDate => CanEditDates && !IsRunning;
+
+    /// <summary>Campos de data/hora aparecem tanto para tarefa nova (para permitir lançar
+    /// uma sessão retroativa direto na criação) quanto para tarefa existente com sessão(ões)
+    /// registrada(s) — só ficam ocultos para uma tarefa existente que nunca foi iniciada.</summary>
+    public bool ShowDateFields => IsNew || !HasNoEntries;
 
     public event Action? Saved;
     public event Action? CloseRequested;
@@ -180,7 +185,13 @@ public partial class TaskEditorViewModel : ObservableObject
 
     partial void OnNameChanged(string value) => Validate();
 
-    partial void OnIsNewChanged(bool value) => OnPropertyChanged(nameof(Title));
+    partial void OnIsNewChanged(bool value)
+    {
+        OnPropertyChanged(nameof(Title));
+        OnPropertyChanged(nameof(CanEditDates));
+        OnPropertyChanged(nameof(CanEditEndDate));
+        OnPropertyChanged(nameof(ShowDateFields));
+    }
 
     partial void OnTimeEntryCountChanged(int value)
     {
@@ -189,6 +200,7 @@ public partial class TaskEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(HasMultipleEntries));
         OnPropertyChanged(nameof(CanEditDates));
         OnPropertyChanged(nameof(CanEditEndDate));
+        OnPropertyChanged(nameof(ShowDateFields));
     }
 
     partial void OnIsRunningChanged(bool value) => OnPropertyChanged(nameof(CanEditEndDate));
@@ -243,7 +255,57 @@ public partial class TaskEditorViewModel : ObservableObject
         DateTime? newStartedAtUtc = null;
         DateTime? newEndedAtUtc = null;
 
-        if (CanEditDates)
+        if (IsNew)
+        {
+            // Data/hora são opcionais na criação: em branco = tarefa sem sessão, como hoje.
+            // Só o início preenchido = sessão registrada mas pausada (duração zero), sem
+            // iniciar o timer. Início + término = sessão retroativa já encerrada.
+            var startTouched = StartDate.HasValue || !string.IsNullOrWhiteSpace(StartTimeText);
+            var startFilled = StartDate.HasValue && !string.IsNullOrWhiteSpace(StartTimeText);
+            var endTouched = EndDate.HasValue || !string.IsNullOrWhiteSpace(EndTimeText);
+            var endFilled = EndDate.HasValue && !string.IsNullOrWhiteSpace(EndTimeText);
+
+            if (startTouched && !startFilled)
+            {
+                DateTimeError = "Preencha a data e o horário de início juntos, ou deixe os dois em branco.";
+                return;
+            }
+
+            if (!startFilled && endTouched)
+            {
+                DateTimeError = "Para definir um término, preencha primeiro a data/hora de início.";
+                return;
+            }
+
+            if (startFilled)
+            {
+                var startLocal = CombineLocalDateAndTime(StartDate, StartTimeText)!.Value;
+                newStartedAtUtc = DateTime.SpecifyKind(startLocal, DateTimeKind.Local).ToUniversalTime();
+
+                if (endTouched && !endFilled)
+                {
+                    DateTimeError = "Preencha a data e o horário de término juntos, ou deixe os dois em branco.";
+                    return;
+                }
+
+                if (endFilled)
+                {
+                    var endLocal = CombineLocalDateAndTime(EndDate, EndTimeText)!.Value;
+                    newEndedAtUtc = DateTime.SpecifyKind(endLocal, DateTimeKind.Local).ToUniversalTime();
+
+                    if (newEndedAtUtc < newStartedAtUtc)
+                    {
+                        DateTimeError = "O término não pode ser anterior ao início.";
+                        return;
+                    }
+                }
+                else
+                {
+                    newEndedAtUtc = newStartedAtUtc;
+                }
+            }
+        }
+        else if (CanEditDates)
         {
             var startLocal = CombineLocalDateAndTime(StartDate, StartTimeText);
             if (startLocal is null)
@@ -279,7 +341,12 @@ public partial class TaskEditorViewModel : ObservableObject
 
             if (IsNew)
             {
-                await _taskService.CreateAsync(Name, Description, SelectedTag?.Id);
+                var newTask = await _taskService.CreateAsync(Name, Description, SelectedTag?.Id);
+
+                if (newStartedAtUtc.HasValue)
+                {
+                    await _timerService.AddManualEntryAsync(newTask.Id, newStartedAtUtc.Value, newEndedAtUtc!.Value);
+                }
             }
             else
             {

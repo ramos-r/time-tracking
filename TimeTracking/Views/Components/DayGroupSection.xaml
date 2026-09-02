@@ -1,0 +1,61 @@
+<UserControl x:Class="TimeTracking.Views.Components.DayGroupSection"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:components="clr-namespace:TimeTracking.Views.Components"
+             mc:Ignorable="d">
+    <!-- Grupo retrátil de data (Seção 68 — ajuste visual): cabeçalho + tarefas desenhados
+         como um único container (DayGroupContainerStyle, Cards.xaml), não dois cards
+         separados. O cabeçalho fica no tom "Surface Elevated" (o próprio fundo do
+         container); o painel de tarefas por dentro (DayGroupContentStyle) usa "Surface",
+         mais escuro, para indicar que as tarefas pertencem àquele cabeçalho. A transição de
+         altura/opacidade do conteúdo é feita em código (SetContentHeight) porque WPF não
+         anima diretamente entre uma altura fixa e "Auto". -->
+    <Border Style="{StaticResource DayGroupContainerStyle}">
+        <StackPanel>
+            <Border Style="{StaticResource DayGroupHeaderStyle}">
+                <Border.InputBindings>
+                    <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleExpandCommand}" />
+                </Border.InputBindings>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Path Grid.Column="0" Data="{StaticResource ChevronIconGeometry}"
+                          Fill="{DynamicResource TextSecondaryBrush}"
+                          Width="10" Height="6" Stretch="Uniform"
+                          VerticalAlignment="Center" Margin="0,0,10,0">
+                        <Path.RenderTransform>
+                            <RotateTransform x:Name="ChevronRotate" CenterX="5" CenterY="3" />
+                        </Path.RenderTransform>
+                    </Path>
+
+                    <TextBlock Grid.Column="1" Text="{Binding DisplayLabel}"
+                               FontFamily="{StaticResource AppFontFamilyLight}" FontSize="14"
+                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+
+                    <TextBlock Grid.Column="2" Text="{Binding TotalDurationDisplay}"
+                               FontFamily="Consolas" FontSize="14"
+                               Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+
+            <Border x:Name="ContentHost" Style="{StaticResource DayGroupContentStyle}" Height="0" Opacity="0">
+                <StackPanel>
+                    <Border Height="1" Margin="16,0" Background="{DynamicResource BorderBrush}" Opacity="0.4" />
+                    <ItemsControl x:Name="TasksHost" ItemsSource="{Binding Tasks}" Margin="12,8,12,10">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <components:TaskCard />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

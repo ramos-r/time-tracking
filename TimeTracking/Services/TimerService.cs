@@ -103,4 +103,19 @@ public class TimerService : ITimerService
         // busca a entidade rastreada pelo Id e copia apenas esses campos (fix da Fase 4).
         await _timeEntryRepository.UpdateAsync(new TimeEntry { Id = entryId, StartedAt = startedAt, EndedAt = endedAt });
     }
+
+    public async Task AddManualEntryAsync(int taskId, DateTime startedAtUtc, DateTime endedAtUtc)
+    {
+        if (endedAtUtc < startedAtUtc)
+        {
+            throw new ArgumentException("O término não pode ser anterior ao início.", nameof(endedAtUtc));
+        }
+
+        await _timeEntryRepository.AddAsync(new TimeEntry
+        {
+            TaskId = taskId,
+            StartedAt = startedAtUtc,
+            EndedAt = endedAtUtc
+        });
+    }
 }

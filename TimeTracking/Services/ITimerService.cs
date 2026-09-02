@@ -32,4 +32,10 @@ public interface ITimerService
     /// <summary>Atualiza os timestamps de uma TimeEntry específica (Seção 17: só permitido
     /// quando a tarefa possui exatamente uma sessão). Não altera TaskId.</summary>
     Task UpdateEntryTimestampsAsync(int entryId, DateTime startedAt, DateTime? endedAt);
+
+    /// <summary>Cria uma sessão já encerrada manualmente, sem passar pelo fluxo Start/Pause
+    /// (criação retroativa via "Nova tarefa"). Se endedAtUtc == startedAtUtc, a sessão fica
+    /// registrada com duração zero e a tarefa entra em estado "pausada" — nunca em execução —
+    /// até o usuário dar Play para continuar.</summary>
+    Task AddManualEntryAsync(int taskId, DateTime startedAtUtc, DateTime endedAtUtc);
 }

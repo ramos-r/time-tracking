@@ -14,4 +14,32 @@
             </Trigger>
         </Style.Triggers>
     </Style>
+
+    <!-- Grupo retrátil de data (Seção 68 — ajuste visual): um único container arredondado
+         envolvendo cabeçalho + tarefas, não dois cards separados. O fundo do próprio Border
+         já é o tom do cabeçalho (Surface Elevated); o painel de tarefas por dentro usa um
+         tom mais escuro (Surface) para indicar hierarquia "dentro do grupo". -->
+    <Style x:Key="DayGroupContainerStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
+    <Style x:Key="DayGroupHeaderStyle" TargetType="Border">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Padding" Value="16,12" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Opacity" Value="0.85" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="DayGroupContentStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="CornerRadius" Value="0,0,8,8" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
 </ResourceDictionary>
