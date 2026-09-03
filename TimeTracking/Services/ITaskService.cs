@@ -12,4 +12,10 @@ public interface ITaskService
 
     /// <summary>Limpar histórico (Seção 27): remove todas as Task e TimeEntry, preservando as Tag.</summary>
     Task ClearHistoryAsync();
+
+    /// <summary>Disparado após o histórico ser limpo. Existe porque "Limpar histórico" fica em
+    /// Settings, uma tela/ViewModel diferente de Time Tracking — sem esse evento, a lista de
+    /// tarefas já carregada em memória lá (Seção 65, AsNoTracking) ficaria desatualizada até o
+    /// usuário reiniciar o app ou trocar de tela e voltar.</summary>
+    event Action? HistoryCleared;
 }

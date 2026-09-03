@@ -91,8 +91,15 @@ public partial class TimeTrackingViewModel : ObservableObject
         _tickTimer.Tick += (_, _) => OnTick();
         _tickTimer.Start();
 
+        // "Limpar histórico" fica em Settings, uma tela diferente — sem isso, a lista aqui
+        // (Seção 65, snapshot AsNoTracking) ficaria mostrando tarefas já apagadas do banco
+        // até o usuário reiniciar o app ou navegar para fora desta tela e voltar.
+        _taskService.HistoryCleared += OnHistoryCleared;
+
         _ = LoadTasksAsync();
     }
+
+    private async void OnHistoryCleared() => await LoadTasksAsync();
 
     private void OnTick()
     {

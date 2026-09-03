@@ -51,7 +51,13 @@ public class TaskService : ITaskService
 
     public Task DeleteAsync(int id) => _taskRepository.DeleteAsync(id);
 
-    public Task ClearHistoryAsync() => _taskRepository.DeleteAllAsync();
+    public event Action? HistoryCleared;
+
+    public async Task ClearHistoryAsync()
+    {
+        await _taskRepository.DeleteAllAsync();
+        HistoryCleared?.Invoke();
+    }
 
     private static void ValidateName(string name)
     {
