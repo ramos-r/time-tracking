@@ -24,6 +24,7 @@ public class DayGroupViewModelTests
             noOp,
             noOp,
             noOp,
+            noOp,
             isSelectionMode: false);
     }
 

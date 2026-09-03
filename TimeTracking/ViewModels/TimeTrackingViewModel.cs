@@ -168,6 +168,7 @@ public partial class TimeTrackingViewModel : ObservableObject
                 SelectTaskCommand,
                 RequestDeleteCommand,
                 SelectGroupCommand,
+                SelectSingleTaskCommand,
                 IsSelectionMode));
         }
 
@@ -310,6 +311,27 @@ public partial class TimeTrackingViewModel : ObservableObject
     {
         IsSelectionMode = true;
         _activeSelectionGroupTasks = group.Tasks.ToList();
+    }
+
+    /// <summary>Opção "Selecionar" no menu "..."/clique direito de uma tarefa individual —
+    /// ativa o modo de seleção, marca só esta tarefa, e define o grupo (dia) dela como o
+    /// alvo do "Selecionar todas" do header, seguindo a mesma regra de escopo por dia já
+    /// usada no clique direito do cabeçalho do grupo.</summary>
+    [RelayCommand]
+    private void SelectSingleTask(TaskListItemViewModel item)
+    {
+        var group = DayGroups.FirstOrDefault(g => g.Tasks.Contains(item));
+        if (group is not null)
+        {
+            _activeSelectionGroupTasks = group.Tasks.ToList();
+        }
+
+        IsSelectionMode = true;
+        item.IsSelected = true;
+        _selectedTaskIds.Add(item.Id);
+
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedCountDisplay));
     }
 
     /// <summary>Botão "Selecionar todas" do header (ao lado de "Excluir selecionadas") —

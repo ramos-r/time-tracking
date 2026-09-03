@@ -25,6 +25,9 @@
         <Border.ContextMenu>
             <ContextMenu Style="{StaticResource ThemedContextMenuStyle}"
                          DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                <MenuItem Header="Selecionar" Style="{StaticResource ThemedMenuItemStyle}"
+                          Command="{Binding SelectSingleTaskCommand}"
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                 <MenuItem Header="Editar" Style="{StaticResource ThemedMenuItemStyle}"
                           Command="{Binding SelectTaskCommand}"
                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
@@ -114,6 +117,9 @@
                 <Button.ContextMenu>
                     <ContextMenu Style="{StaticResource ThemedContextMenuStyle}"
                                  DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                        <MenuItem Header="Selecionar" Style="{StaticResource ThemedMenuItemStyle}"
+                                  Command="{Binding SelectSingleTaskCommand}"
+                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                         <MenuItem Header="Editar" Style="{StaticResource ThemedMenuItemStyle}"
                                   Command="{Binding SelectTaskCommand}"
                                   CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />

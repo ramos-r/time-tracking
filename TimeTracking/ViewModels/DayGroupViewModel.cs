@@ -29,6 +29,10 @@ public partial class DayGroupViewModel : ObservableObject
     /// cabeçalho) — ver comentário na implementação, TimeTrackingViewModel.SelectGroup.</summary>
     public ICommand SelectGroupCommand { get; }
 
+    /// <summary>Opção "Selecionar" no menu "..."/clique direito de uma tarefa individual —
+    /// ver TimeTrackingViewModel.SelectSingleTask.</summary>
+    public ICommand SelectSingleTaskCommand { get; }
+
     /// <summary>Repassado da TimeTrackingViewModel (seleção múltipla para exclusão em lote).
     /// Não precisa de notificação própria: alternar o modo de seleção reconstrói os grupos
     /// (RebuildDayGroups), então cada DayGroupViewModel novo já nasce com o valor atual.</summary>
@@ -57,6 +61,7 @@ public partial class DayGroupViewModel : ObservableObject
         ICommand selectTaskCommand,
         ICommand requestDeleteCommand,
         ICommand selectGroupCommand,
+        ICommand selectSingleTaskCommand,
         bool isSelectionMode)
     {
         Date = date;
@@ -70,6 +75,7 @@ public partial class DayGroupViewModel : ObservableObject
         SelectTaskCommand = selectTaskCommand;
         RequestDeleteCommand = requestDeleteCommand;
         SelectGroupCommand = selectGroupCommand;
+        SelectSingleTaskCommand = selectSingleTaskCommand;
         IsSelectionMode = isSelectionMode;
     }
 
