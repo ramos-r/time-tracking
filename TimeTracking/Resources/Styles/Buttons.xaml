@@ -3,7 +3,7 @@
     <!-- Botão de ação principal (Salvar, + Nova tarefa, + Nova tag). -->
     <Style x:Key="PrimaryButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
-        <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextOnPrimaryBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="16,8" />
         <Setter Property="Cursor" Value="Hand" />
@@ -23,6 +23,9 @@
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource PrimaryHoverBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource PrimaryPressedBrush}" />
             </Trigger>
             <Trigger Property="IsEnabled" Value="False">
                 <Setter Property="Opacity" Value="0.5" />

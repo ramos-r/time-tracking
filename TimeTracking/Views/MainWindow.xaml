@@ -45,7 +45,8 @@
                           Stretch="Uniform" Width="18" Height="18" />
                 </Button>
                 <TextBlock Text="{Binding PageTitle}" FontSize="15" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
-                           Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                           Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0"
+                           Visibility="{Binding ShowPageTitle, Converter={StaticResource BoolToVisibility}}" />
             </StackPanel>
         </Border>
 

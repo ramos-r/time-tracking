@@ -10,6 +10,7 @@
                 <ResourceDictionary Source="Resources/Styles/Inputs.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Cards.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Menus.xaml" />
+                <ResourceDictionary Source="Resources/Styles/ColorPicker.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <FontFamily x:Key="AppFontFamily">pack://application:,,,/Resources/Fonts/#Montserrat</FontFamily>

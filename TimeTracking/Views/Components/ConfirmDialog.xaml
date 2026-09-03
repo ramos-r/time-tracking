@@ -49,7 +49,7 @@
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsDestructive, ElementName=Root}" Value="False">
                                         <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
-                                        <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextOnPrimaryBrush}" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

@@ -35,7 +35,9 @@ public partial class App : Application
         services.AddSingleton<ITagService, TagService>();
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<ITimerService, TimerService>();
+        services.AddSingleton<AppSettingsStore>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<IAccentColorService, AccentColorService>();
 
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<TimeTrackingViewModel>();
@@ -68,6 +70,10 @@ public partial class App : Application
 
         // Aplica o tema antes de qualquer janela ser exibida, para não haver "flash" do tema errado.
         _serviceProvider.GetRequiredService<IThemeService>().Initialize();
+
+        // A cor de destaque (Seção 69) depende do tema efetivo já estar aplicado — precisa
+        // rodar depois do ThemeService.Initialize(), também antes de qualquer janela abrir.
+        _serviceProvider.GetRequiredService<IAccentColorService>().Initialize();
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         mainWindow.Show();

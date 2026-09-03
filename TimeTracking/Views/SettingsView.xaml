@@ -14,6 +14,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibility" />
         <converters:EnumToBooleanConverter x:Key="EnumToBoolean" />
+        <converters:ColorMatchToBorderBrushConverter x:Key="ColorMatchToBorderBrush" />
     </UserControl.Resources>
 
     <Grid ClipToBounds="True">
@@ -37,6 +38,71 @@
                     <RadioButton Content="Sistema" GroupName="Theme" Margin="0,0,0,8"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
                                  IsChecked="{Binding SelectedTheme, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static svc:AppTheme.System}}" />
+                </StackPanel>
+
+                <!-- Cor de destaque (Seção 69): swatches predefinidos + seletor de cor livre
+                     (matiz/saturação). Ortogonal ao tema Dark/Light acima — afeta só botões
+                     primários, item ativo da navegação, indicador de timer ativo, foco e
+                     ícones ativos, nunca background/surface/texto. -->
+                <TextBlock Text="Cor de destaque" FontSize="12" Opacity="0.7"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,16,0,8" />
+                <StackPanel Orientation="Horizontal">
+                    <ItemsControl ItemsSource="{Binding AccentSwatches}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Width="28" Height="28" Margin="0,0,8,8" Background="{Binding}"
+                                        BorderThickness="2" Cursor="Hand"
+                                        Command="{Binding DataContext.SelectAccentSwatchCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                    <Button.BorderBrush>
+                                        <MultiBinding Converter="{StaticResource ColorMatchToBorderBrush}">
+                                            <Binding Path="." />
+                                            <Binding Path="DataContext.SelectedAccentHex" RelativeSource="{RelativeSource AncestorType=ItemsControl}" />
+                                        </MultiBinding>
+                                    </Button.BorderBrush>
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Ellipse x:Name="Dot" Fill="{TemplateBinding Background}"
+                                                     Stroke="{TemplateBinding BorderBrush}"
+                                                     StrokeThickness="2" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Dot" Property="Opacity" Value="0.8" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                <Button Content="Personalizar..." Command="{Binding ToggleCustomizePanelCommand}"
+                        Style="{StaticResource LinkButtonStyle}" Foreground="{DynamicResource TextSecondaryBrush}"
+                        HorizontalAlignment="Left" Padding="0" Margin="0,0,0,4" />
+
+                <StackPanel Visibility="{Binding IsCustomizePanelOpen, Converter={StaticResource BoolToVisibility}}" Margin="0,8,0,0">
+                    <TextBlock Text="Matiz" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
+                    <Slider Style="{StaticResource HueSliderStyle}" Value="{Binding SelectedHue, Mode=TwoWay}" Margin="0,0,0,12" />
+
+                    <TextBlock Text="Saturação" FontSize="11" Opacity="0.6"
+                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4" />
+                    <Slider Style="{StaticResource SaturationSliderStyle}" Value="{Binding SelectedSaturation, Mode=TwoWay}" Margin="0,0,0,12" />
+
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="28" Height="28" Fill="{Binding SelectedAccentHex}"
+                                 Stroke="{DynamicResource BorderBrush}" StrokeThickness="1" Margin="0,0,8,0" />
+                        <TextBox Text="{Binding CustomHexInput, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="100" VerticalAlignment="Center" FontFamily="Consolas" MaxLength="7" />
+                    </StackPanel>
+                    <TextBlock Text="{Binding CustomHexError}" Foreground="{DynamicResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                               Visibility="{Binding CustomHexError, Converter={StaticResource NullOrEmptyToVisibility}}" />
                 </StackPanel>
 
                 <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,24" />

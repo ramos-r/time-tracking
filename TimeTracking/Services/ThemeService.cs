@@ -1,9 +1,7 @@
-using System.IO;
 using System.Security;
-using System.Text.Json;
+using System.IO;
 using System.Windows;
 using Microsoft.Win32;
-using TimeTracking.Helpers;
 
 namespace TimeTracking.Services;
 
@@ -14,21 +12,37 @@ namespace TimeTracking.Services;
 /// </summary>
 public class ThemeService : IThemeService
 {
-    private readonly string _settingsPath = SettingsFilePathProvider.GetSettingsFilePath();
+    private readonly AppSettingsStore _settingsStore;
+
+    public ThemeService(AppSettingsStore settingsStore)
+    {
+        _settingsStore = settingsStore;
+    }
 
     public AppTheme CurrentTheme { get; private set; } = AppTheme.System;
+
+    public AppTheme EffectiveTheme { get; private set; } = AppTheme.Dark;
+
+    public event Action<AppTheme>? EffectiveThemeChanged;
 
     public void Initialize()
     {
         CurrentTheme = LoadSavedTheme();
-        ApplyResourceDictionary(GetEffectiveTheme(CurrentTheme));
+        ApplyEffectiveTheme(GetEffectiveTheme(CurrentTheme));
     }
 
     public void ApplyTheme(AppTheme theme)
     {
         CurrentTheme = theme;
         SaveTheme(theme);
-        ApplyResourceDictionary(GetEffectiveTheme(theme));
+        ApplyEffectiveTheme(GetEffectiveTheme(theme));
+    }
+
+    private void ApplyEffectiveTheme(AppTheme effective)
+    {
+        EffectiveTheme = effective;
+        ApplyResourceDictionary(effective);
+        EffectiveThemeChanged?.Invoke(effective);
     }
 
     private AppTheme GetEffectiveTheme(AppTheme theme) => theme == AppTheme.System ? GetSystemTheme() : theme;
@@ -79,41 +93,10 @@ public class ThemeService : IThemeService
 
     private AppTheme LoadSavedTheme()
     {
-        try
-        {
-            if (File.Exists(_settingsPath))
-            {
-                var json = File.ReadAllText(_settingsPath);
-                var settings = JsonSerializer.Deserialize<AppSettingsData>(json);
-                if (settings is not null && Enum.TryParse<AppTheme>(settings.Theme, out var theme))
-                {
-                    return theme;
-                }
-            }
-        }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            // Arquivo de configuração ausente/corrompido — usa o padrão (Sistema).
-        }
-
-        return AppTheme.System;
+        var data = _settingsStore.Load();
+        return Enum.TryParse<AppTheme>(data.Theme, out var theme) ? theme : AppTheme.System;
     }
 
-    private void SaveTheme(AppTheme theme)
-    {
-        try
-        {
-            var json = JsonSerializer.Serialize(new AppSettingsData { Theme = theme.ToString() });
-            File.WriteAllText(_settingsPath, json);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Falha ao persistir preferência não deve impedir a troca de tema na sessão atual.
-        }
-    }
-
-    private class AppSettingsData
-    {
-        public string Theme { get; set; } = nameof(AppTheme.System);
-    }
+    private void SaveTheme(AppTheme theme) =>
+        _settingsStore.Save(data => data.Theme = theme.ToString());
 }

@@ -1,0 +1,126 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:converters="clr-namespace:TimeTracking.Converters">
+    <!-- Seletor de cor livre (matiz + saturação) da cor de destaque personalizável (Seção 69).
+         O Slider padrão do WPF não pinta o track com um Background simples (mesmo motivo de
+         TextBox/ComboBox em Inputs.xaml precisarem de ControlTemplate próprio) — por isso os
+         dois estilos abaixo usam o Track/Thumb/RepeatButton nativos do Slider (única forma
+         suportada de reter o arrasto do mouse) com um Border em gradiente por trás.
+
+         HueToColor é declarado aqui (não em SettingsView.xaml) porque um StaticResource usado
+         dentro de um ResourceDictionary só enxerga chaves do próprio arquivo/seus merges — não
+         chaves de outro dicionário-irmão fundido separadamente em App.xaml. -->
+    <converters:HueToColorConverter x:Key="HueToColor" />
+
+    <Style x:Key="ColorSliderRepeatButtonStyle" TargetType="RepeatButton">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Rectangle Fill="Transparent" Height="24" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="ColorSliderThumbStyle" TargetType="Thumb">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Ellipse Fill="White" Stroke="#66000000" StrokeThickness="1.5" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Matiz (0-359): faixa arco-íris fixa, não depende de nenhum outro valor. -->
+    <Style x:Key="HueSliderStyle" TargetType="Slider">
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="359" />
+        <Setter Property="IsMoveToPointEnabled" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid VerticalAlignment="Center">
+                        <Border Height="10" CornerRadius="5">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#FF0000" Offset="0" />
+                                    <GradientStop Color="#FFFF00" Offset="0.167" />
+                                    <GradientStop Color="#00FF00" Offset="0.333" />
+                                    <GradientStop Color="#00FFFF" Offset="0.5" />
+                                    <GradientStop Color="#0000FF" Offset="0.667" />
+                                    <GradientStop Color="#FF00FF" Offset="0.833" />
+                                    <GradientStop Color="#FF0000" Offset="1" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Track x:Name="PART_Track"
+                               Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value}"
+                               IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource ColorSliderRepeatButtonStyle}" Command="Slider.DecreaseLarge" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource ColorSliderRepeatButtonStyle}" Command="Slider.IncreaseLarge" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ColorSliderThumbStyle}" />
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Saturação (0-100): gradiente de cinza até o matiz atualmente selecionado — a ponta
+         direita (GradientStop de Offset=1) é vinculada a SelectedHue via HueToColorConverter,
+         herdando o DataContext do Slider (SettingsViewModel), então acompanha o outro slider. -->
+    <Style x:Key="SaturationSliderStyle" TargetType="Slider">
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="100" />
+        <Setter Property="IsMoveToPointEnabled" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid VerticalAlignment="Center">
+                        <Border Height="10" CornerRadius="5">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#808080" Offset="0" />
+                                    <GradientStop Offset="1"
+                                                  Color="{Binding SelectedHue, Converter={StaticResource HueToColor}}" />
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <Track x:Name="PART_Track"
+                               Minimum="{TemplateBinding Minimum}"
+                               Maximum="{TemplateBinding Maximum}"
+                               Value="{TemplateBinding Value}"
+                               IsDirectionReversed="{TemplateBinding IsDirectionReversed}">
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource ColorSliderRepeatButtonStyle}" Command="Slider.DecreaseLarge" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton Style="{StaticResource ColorSliderRepeatButtonStyle}" Command="Slider.IncreaseLarge" />
+                            </Track.IncreaseRepeatButton>
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ColorSliderThumbStyle}" />
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

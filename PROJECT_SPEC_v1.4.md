@@ -1,13 +1,14 @@
 # TIME TRACKING APP
 ## Especificação Técnica e Plano de Desenvolvimento — MVP
 
-**Versão:** 1.3
+**Versão:** 1.4
 **Plataforma:** Windows Desktop
 **Tipo:** Aplicação local/offline para controle de tempo de tarefas
 **Banco:** SQLite local
 **Desenvolvimento assistido por Claude Code**
 
 **Changelog:**
+- v1.4 (03/09/2026): adicionada a Seção 69 — Cor de destaque personalizável (swatches + color picker). Atualiza Seções 26, 28, 29, 30, 57 e 61. Ver item 17 da nota de revisão pré-desenvolvimento.
 - v1.3 (01/09/2026): adicionada a Seção 68 — Agrupamento retrátil de tarefas por data, com total do dia. Ver nota na Seção 21.
 
 ---
@@ -47,6 +48,8 @@ Esta nota documenta decisões tomadas para resolver ambiguidades identificadas n
 15. **Distinção entre Pause e Stop (Seções 12-14)**: mecanicamente idênticos na persistência (ambos encerram a `TimeEntry` aberta); a diferença é apenas de rótulo/UX. Nenhum campo adicional é necessário no MVP.
 
 16. **Estratégia de ícones (Seção 30)**: usar a fonte nativa do Windows (Segoe Fluent Icons/MDL2) no MVP, sem dependência externa; ícones vetoriais próprios ficam para a Fase 9 (Polish), se necessário.
+
+17. **Cor de destaque personalizável (Seção 69)**: a ideia inicial de 4-5 temas de acento predefinidos foi substituída por um modelo híbrido — um leque de swatches predefinidos para seleção rápida, mais um seletor de cor livre (matiz/saturação) para personalização avançada. O tema Dark/Light (Seções 28-29) continua controlando apenas background, surface, bordas e texto; a cor de destaque passa a ser ortogonal ao tema, escolhida independentemente pelo usuário.
 
 ---
 
@@ -869,6 +872,14 @@ Tema
 
 Detecção do tema "Sistema": via leitura do registro do Windows (`HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme`) ou API equivalente disponível no .NET 8/WPF.
 
+```text
+Cor de destaque
+
+●  ●  ●  ●  ●  ●     [ Personalizar... ]
+```
+
+Um conjunto de swatches predefinidos permite a troca rápida da cor de destaque (acento) da aplicação com um clique. O botão/ação "Personalizar" abre um seletor de cor livre (matiz e saturação) para quem quiser uma tonalidade fora do leque padrão. A cor de destaque é independente do tema Dark/Light/Sistema — afeta apenas elementos de acento (botões primários, ícones ativos, indicador de tarefa em execução, foco), nunca background/surface/texto. Comportamento completo, regras de derivação de variações e persistência estão detalhados na Seção 69.
+
 ## Dados
 
 ```text
@@ -967,6 +978,8 @@ Danger:
 #C87575
 ```
 
+**Nota (v1.4):** `Primary` e `Primary Hover` acima deixam de ser valores fixos do tema — passam a ser apenas o preset padrão entre os swatches de cor de destaque (Seção 69) e podem ser substituídos em runtime pela cor escolhida pelo usuário (swatch ou seletor livre). `Primary Hover`, `Primary Pressed` e a variante "subtle" (fundo de badge/seleção/estado ativo) deixam de ser fixados na paleta — passam a ser calculados a partir da cor de destaque ativa e do tema, conforme as regras de derivação da Seção 69. `Background`, `Surface`, `Surface Elevated`, `Border` e as cores de texto continuam fixos, controlados apenas pelo tema Dark/Light/Sistema.
+
 Essas cores são uma proposta inicial e poderão ser ajustadas durante a fase de polish.
 
 ---
@@ -1013,6 +1026,8 @@ Danger:
 #A95F5F
 ```
 
+**Nota (v1.4):** mesma observação da Seção 28 — `Primary`/`Primary Hover` acima são apenas o preset padrão de destaque; a cor de destaque real, suas variações (`Hover`, `Pressed`, `Subtle`) e o contraste do texto sobre ela são calculados em runtime a partir da escolha do usuário, conforme a Seção 69. `Background`, `Surface`, `Surface Elevated`, `Border` e as cores de texto permanecem fixos por tema.
+
 O Light Mode deve manter contraste adequado e não parecer simplesmente uma inversão do Dark Mode.
 
 ---
@@ -1045,6 +1060,10 @@ Diálogos de confirmação (Seções 15, 23, 27) devem usar um componente própr
 
 **Decisão (Fase 0):** usar a fonte de glifos nativa do Windows (Segoe Fluent Icons / Segoe MDL2 Assets) para o MVP (Fases 1-8) — zero dependência externa, zero arquivo adicional. Ícones específicos podem ser trocados por geometria vetorial própria (`Path` em XAML) durante a Fase 9 (Polish), caso o resultado nativo não combine com a identidade visual (paleta/acento da referência de estilo, Seção 31) — mas isso não deve ser antecipado antes de validar o restante do produto.
 
+## Cor de destaque dinâmica (accent)
+
+**Decisão (v1.4):** diferente de `Dark.xaml`/`Light.xaml`, a cor de destaque não é um arquivo de recursos estático — ela é calculada em runtime por um `AccentColorService` (Seção 69) a partir da cor escolhida pelo usuário (swatch predefinido ou seletor livre) e publicada como um conjunto de brushes (`PrimaryBrush`, `PrimaryHoverBrush`, `PrimaryPressedBrush`, `PrimarySubtleBrush`, `TextOnPrimaryBrush`) via `DynamicResource`, nunca `StaticResource` — isso permite trocar a cor de destaque sem reiniciar a aplicação, da mesma forma que a troca de tema (critério de aceite da Seção 57). Todos os estilos do design system (`Buttons.xaml`, `Navigation.xaml`, etc.) devem referenciar essas chaves via `DynamicResource`.
+
 Exemplo conceitual:
 
 ```text
@@ -1062,6 +1081,8 @@ Resources/
 │
 └── Icons/
 ```
+
+Não há um arquivo `Accent.xaml` estático equivalente a `Dark.xaml`/`Light.xaml` — as brushes de acento (`PrimaryBrush` e derivadas) são geradas e mescladas nos recursos da aplicação em runtime pelo `AccentColorService` (Seção 69), a partir da cor persistida nas preferências do usuário.
 
 ---
 
@@ -1854,13 +1875,15 @@ Implementar:
 - Light Mode;
 - tema "Sistema" (detecção via registro do Windows);
 - preferência de tema;
+- cor de destaque personalizável — swatches predefinidos + seletor de cor livre (Seção 69);
+- preferência de cor de destaque;
 - limpar histórico (escopo: Task + TimeEntry, preservando Tag);
 - confirmação de exclusão;
 - tela About.
 
 ### Critério de aceite
 
-O usuário deve conseguir alternar o tema sem reiniciar a aplicação, caso a implementação permita isso de maneira limpa.
+O usuário deve conseguir alternar o tema e a cor de destaque sem reiniciar a aplicação, caso a implementação permita isso de maneira limpa.
 
 Ao terminar:
 
@@ -1979,6 +2002,8 @@ O MVP só será considerado concluído quando:
 - [ ] Settings funciona;
 - [ ] Dark Mode funciona;
 - [ ] Light Mode funciona;
+- [ ] cor de destaque pode ser escolhida via swatch predefinido;
+- [ ] cor de destaque pode ser personalizada via seletor de cor livre;
 - [ ] limpeza de histórico possui confirmação;
 - [ ] aplicação funciona offline;
 - [ ] não existe dependência de servidor;
@@ -2313,6 +2338,58 @@ Esta feature depende de `Task` e `TimeEntry` já existirem e possuírem dados re
 - Expandir um grupo recolhido → cards voltam a aparecer.
 - Timer em execução em uma tarefa de um grupo recolhido → grupo expande automaticamente.
 - `TimeEntry` aberta (sem `EndedAt`) → entra no total do dia usando `UtcNow` até o momento do cálculo, sem gerar erro.
+
+---
+
+# 69. FEATURE (v1.4) — COR DE DESTAQUE PERSONALIZÁVEL (SWATCHES + COLOR PICKER)
+
+## Contexto
+
+Esta seção substitui a ideia inicial de 4-5 temas de acento predefinidos (mencionada informalmente antes do início do desenvolvimento, ver item 17 da nota de revisão pré-desenvolvimento). Em vez de o usuário escolher entre um número fixo de temas de cor, ele poderá escolher a cor de destaque da aplicação a partir de um leque de swatches predefinidos ou de forma totalmente livre — mantendo o tema Dark/Light (Seções 28-29) controlando exclusivamente background, surface, bordas e texto, sem qualquer alteração nesse comportamento.
+
+"Cor de destaque" (accent) é a cor usada em: botões primários (ex.: "Salvar", "+ Nova tarefa"), item ativo da navegação/sidebar, indicador visual de tarefa com timer em execução, estados de foco, e ícones em estado ativo/selecionado. Não afeta a cor das Tags (Seção 24), que já possuem cor própria e independente por tag.
+
+## Requisito funcional
+
+1. Em Settings → Aparência (Seção 26), abaixo da seleção de tema, exibir um leque de **swatches predefinidos** (sugestão inicial: 6 cores, incluindo o roxo/lilás da referência visual em `interfaceref.png` como padrão de fábrica — Seção 31) para troca rápida da cor de destaque com um clique.
+2. Ao lado dos swatches, um botão/ação **"Personalizar"** abre um seletor de cor livre (matiz e saturação), permitindo ao usuário escolher qualquer tonalidade fora do leque predefinido.
+3. A cor de destaque escolhida (via swatch ou personalizada) aplica-se imediatamente, sem necessidade de reiniciar a aplicação — mesmo comportamento exigido para troca de tema (critério de aceite da Seção 57).
+4. A cor de destaque é **ortogonal ao tema**: o usuário pode combinar, por exemplo, tema Dark com qualquer cor de destaque, ou tema Light com qualquer cor de destaque, livremente.
+5. A última cor de destaque escolhida deve ser persistida e restaurada na reabertura da aplicação (mesmo mecanismo de persistência da preferência de tema — Seção 26/57).
+
+## Regras de derivação das variações
+
+O usuário escolhe apenas a cor-base de destaque (matiz + saturação). As variações abaixo **não** são escolhidas pelo usuário — são calculadas automaticamente, em runtime, a partir da cor-base e do tema ativo (Dark ou Light), para garantir contraste e legibilidade consistentes:
+
+- `Primary` — a cor-base escolhida, com a luminosidade ajustada automaticamente para permanecer legível sobre o background do tema ativo (evita cores base ilegíveis, ex.: uma cor muito escura escolhida enquanto o tema Dark está ativo).
+- `Primary Hover` / `Primary Pressed` — variações de luminosidade derivadas da cor-base (mais clara ou mais escura, conforme o tema ativo).
+- `Primary Subtle` — variante de baixa opacidade/luminosidade alta, usada em fundos de badges, seleção de item de lista e estados "ativo" sutis.
+- `Text On Primary` — cor do texto/ícone exibido sobre um elemento preenchido com a cor de destaque (ex.: texto de um botão primário). Calculada automaticamente via razão de contraste (fórmula de luminância relativa, padrão WCAG), escolhendo entre uma cor de texto clara ou escura conforme o resultado — nunca fixada em branco ou preto por padrão, já que a cor de destaque pode ser qualquer matiz.
+
+Essa lógica evita o principal risco de um seletor de cor totalmente livre: o usuário escolher uma combinação (cor de destaque × tema) que resulte em baixo contraste ou texto ilegível sobre botões/elementos de acento.
+
+## Persistência
+
+A cor de destaque escolhida (hex, ex.: `#7C5CFC`) é armazenada como uma preferência de aplicação, no mesmo local/mecanismo já previsto para a preferência de tema (Seção 26/57) — não é um campo do modelo de domínio (`Task`, `Tag`, `TimeEntry` permanecem inalterados, no mesmo espírito já estabelecido na Seção 68 para a feature de agrupamento por data).
+
+## Arquitetura / onde implementar
+
+- Um `AccentColorService` (paralelo ao `ThemeService` já previsto na Seção 33) é responsável por: armazenar/carregar a cor de destaque persistida, calcular as variações derivadas (seção acima) para o tema ativo, e publicar os resultados como brushes via `DynamicResource` nos recursos globais da aplicação — ver detalhamento em Seção 30, "Cor de destaque dinâmica".
+- O `AccentColorService` deve recalcular as variações sempre que o tema (Dark/Light/Sistema) mudar, já que a mesma cor-base pode exigir luminosidades diferentes em cada tema.
+- O seletor de cor personalizado é um componente próprio do design system (Seção 30), sem dependência externa — consistente com a filosofia de zero dependência adotada para ícones (Seção 16). Pode ser um controle simples (roda ou quadrado de matiz/saturação + preview + campo hex), não precisa ser sofisticado.
+- Regras de negócio de cálculo de contraste/derivação não devem ficar na View nem na ViewModel diretamente — residem no `AccentColorService` (Seção 5, "Regra importante").
+
+## Onde isso se encaixa no plano de fases
+
+Esta feature pertence à **Fase 8 — Settings e Temas** (Seção 57), junto da implementação de Dark/Light/Sistema. A Seção 57 já foi atualizada para incluir explicitamente "cor de destaque (swatches + personalização)" em seu escopo. Não é necessária nenhuma fase adicional nem alteração em fases anteriores — o modelo de dados permanece o mesmo.
+
+## Testes a adicionar (Seção 47)
+
+- Selecionar um swatch predefinido → cor de destaque aplicada imediatamente em botões/ícones/indicadores, sem reiniciar.
+- Abrir o seletor personalizado e escolher uma cor fora do leque → cor aplicada e persistida.
+- Reabrir a aplicação → última cor de destaque escolhida é restaurada.
+- Trocar o tema (Dark ↔ Light) mantendo a mesma cor de destaque → variações (`Hover`, `Pressed`, `Subtle`, `Text On Primary`) recalculadas corretamente para o novo tema, sem perda de contraste.
+- Escolher uma cor de destaque de luminosidade extrema (muito clara ou muito escura) → `Text On Primary` ainda resulta em texto legível sobre o botão primário.
 
 ---
 

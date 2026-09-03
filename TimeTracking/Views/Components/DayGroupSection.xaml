@@ -45,7 +45,7 @@
                     </Path>
 
                     <TextBlock Grid.Column="1" Text="{Binding DisplayLabel}"
-                               FontFamily="{StaticResource AppFontFamilyLight}" FontSize="14"
+                               FontFamily="{StaticResource AppFontFamily}" FontSize="14"
                                Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
 
                     <TextBlock Grid.Column="2" Text="{Binding TotalDurationDisplay}"

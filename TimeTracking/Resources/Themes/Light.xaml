@@ -5,9 +5,10 @@
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFDF9" />
     <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="#FFFFFF" />
     <SolidColorBrush x:Key="BorderBrush" Color="#DED6CC" />
-    <SolidColorBrush x:Key="PrimaryBrush" Color="#9A6F45" />
-    <SolidColorBrush x:Key="PrimaryHoverBrush" Color="#825B37" />
-    <SolidColorBrush x:Key="OnPrimaryBrush" Color="#FFFDF9" />
+    <!-- PrimaryBrush/PrimaryHoverBrush/PrimaryPressedBrush/PrimarySubtleBrush/TextOnPrimaryBrush
+         deixaram de ser fixos aqui (Seção 29, nota v1.4) — agora são calculados em runtime pelo
+         AccentColorService (Seção 69) a partir da cor de destaque escolhida pelo usuário, e
+         publicados via DynamicResource em um dicionário próprio (ver AccentColorService.Publish). -->
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="#2C2926" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="#665F58" />
     <SolidColorBrush x:Key="TextMutedBrush" Color="#8C837A" />
@@ -15,4 +16,13 @@
     <SolidColorBrush x:Key="WarningBrush" Color="#A47D3C" />
     <SolidColorBrush x:Key="DangerBrush" Color="#A95F5F" />
     <SolidColorBrush x:Key="OverlayBrush" Color="#66000000" />
+
+    <!-- Logo por tema: cada tema referencia seu próprio PNG (mesmo mecanismo de troca via
+         DynamicResource do restante desta paleta) — ver Views/TimeTrackingView.xaml.
+         DecodePixelHeight decodifica o PNG (2399x508 original) já num tamanho próximo do
+         exibido (Height=36 na View, com folga para telas HiDPI) — sem isso, o WPF decodifica
+         no tamanho original e escala em tempo de render, o que produz serrilhado visível
+         num downscale desse tamanho (~14x). -->
+    <BitmapImage x:Key="LogoImageSource" UriSource="pack://application:,,,/Resources/Images/Logo-Tema-Claro.png"
+                 DecodePixelHeight="120" />
 </ResourceDictionary>

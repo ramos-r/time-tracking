@@ -108,6 +108,15 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+
+            <!-- Logo: cada tema tem seu próprio PNG (LogoImageSource é redefinido em
+                 Dark.xaml/Light.xaml, troca sozinho junto com o tema). BitmapScalingMode
+                 HighQuality evita serrilhado no downscale (imagem-fonte é bem maior que o
+                 tamanho exibido) — complementa o DecodePixelHeight já aplicado no recurso. -->
+            <Image Grid.Column="0" Source="{DynamicResource LogoImageSource}" Height="36"
+                   Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
+
             <StackPanel Grid.Column="1" Orientation="Horizontal"
                         Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVisibility}}">
                 <Button Command="{Binding StartQuickTaskCommand}"

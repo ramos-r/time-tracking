@@ -55,7 +55,7 @@
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="Bg" Property="Background" Value="{DynamicResource PrimaryBrush}" />
-                            <Setter Property="Foreground" Value="{DynamicResource OnPrimaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnPrimaryBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

@@ -25,6 +25,8 @@
     <Resource Include="Resources\Fonts\Montserrat-Regular.ttf" />
     <Resource Include="Resources\Fonts\Montserrat-Light.ttf" />
     <Resource Include="Resources\Icons\AppIcon.ico" />
+    <Resource Include="Resources\Images\Logo-Tema-Escuro.png" />
+    <Resource Include="Resources\Images\Logo-Tema-Claro.png" />
   </ItemGroup>
 
 </Project>

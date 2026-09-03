@@ -88,7 +88,23 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Tags" FontSize="22" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" Foreground="{DynamicResource TextPrimaryBrush}" Margin="24,24,24,8" />
+        <Grid Grid.Row="0" Margin="24,24,24,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Tags" FontSize="22" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
+                       Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Command="{Binding OpenNewTagCommand}"
+                    Style="{StaticResource PrimaryButtonStyle}">
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource SquarePlusIconGeometry}"
+                          Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                          Stretch="Uniform" Width="15" Height="15" Margin="0,0,6,0" />
+                    <TextBlock Text="Nova tag" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
 
         <ScrollViewer Grid.Row="1" Margin="24,0,24,24" VerticalScrollBarVisibility="Hidden">
             <StackPanel>
@@ -141,10 +157,6 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
-
-                <Button Content="+ Nova tag" Command="{Binding OpenNewTagCommand}"
-                        HorizontalAlignment="Center" Margin="0,16,0,0"
-                        Style="{StaticResource PrimaryButtonStyle}" />
             </StackPanel>
         </ScrollViewer>
 
