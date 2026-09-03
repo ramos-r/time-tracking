@@ -116,6 +116,20 @@
                             </Border>
                         </Popup>
                     </Grid>
+                    <!-- Hover/foco aplicados aqui (não no ToggleButton.Template aninhado): o
+                         ToggleButton interno é Focusable="False" (quem recebe o foco de
+                         teclado é o próprio ComboBox), e um Trigger só alcança elementos
+                         nomeados do MESMO template — por isso o valor é setado no ToggleButton
+                         nomeado aqui fora, que já repassa via TemplateBinding para o Border do
+                         seu próprio template. -->
+                    <ControlTemplate.Triggers>
+                        <Trigger SourceName="ToggleButton" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ToggleButton" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="ToggleButton" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
