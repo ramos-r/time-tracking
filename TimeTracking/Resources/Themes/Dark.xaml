@@ -4,7 +4,19 @@
          (quando R>G>B) da paleta original. Background e SurfaceElevated batem exatamente
          com a referência passada pelo usuário (#181818 / #2F2F2F); os demais tons preservam
          a mesma hierarquia relativa de antes, só neutralizados. -->
-    <SolidColorBrush x:Key="BackgroundBrush" Color="#181818" />
+    <!-- BackgroundBrush é um gradiente (não SolidColorBrush) para o efeito de luz subindo de
+         baixo para cima pedido pelo usuário — todo lugar que usa {DynamicResource
+         BackgroundBrush} continua funcionando igual, já que só o tipo concreto do Brush
+         mudou, não a chave. Radial (não linear) e ancorado no centro-inferior para o brilho
+         parecer uma fonte de luz curva, não uma faixa reta ponta a ponta. -->
+    <RadialGradientBrush x:Key="BackgroundBrush" Center="0.5,1" GradientOrigin="0.5,1" RadiusX="0.75" RadiusY="0.65">
+        <GradientStop Color="#242424" Offset="0" />
+        <GradientStop Color="#202020" Offset="0.2" />
+        <GradientStop Color="#1E1E1E" Offset="0.4" />
+        <GradientStop Color="#1B1B1B" Offset="0.6" />
+        <GradientStop Color="#191919" Offset="0.8" />
+        <GradientStop Color="#181818" Offset="1" />
+    </RadialGradientBrush>
     <SolidColorBrush x:Key="SurfaceBrush" Color="#202020" />
     <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="#2F2F2F" />
     <SolidColorBrush x:Key="BorderBrush" Color="#3D3D3D" />
