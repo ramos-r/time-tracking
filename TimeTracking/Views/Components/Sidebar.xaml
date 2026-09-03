@@ -72,7 +72,11 @@
             <Button Style="{StaticResource NavButton}"
                     Command="{Binding NavigateToCommand}" CommandParameter="{x:Static vm:AppPage.Tags}">
                 <StackPanel Orientation="Horizontal">
-                    <Path Data="{StaticResource TagsIconGeometry}" Style="{StaticResource NavIcon}" />
+                    <Path Data="{StaticResource TagsIconGeometry}" Style="{StaticResource NavIcon}">
+                        <Path.RenderTransform>
+                            <RotateTransform Angle="90" CenterX="9" CenterY="9" />
+                        </Path.RenderTransform>
+                    </Path>
                     <TextBlock Text="Tags" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
