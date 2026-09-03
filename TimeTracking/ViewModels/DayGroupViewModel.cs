@@ -21,10 +21,13 @@ public partial class DayGroupViewModel : ObservableObject
     public ObservableCollection<TaskListItemViewModel> Tasks { get; }
 
     public ICommand PlayCommand { get; }
-    public ICommand PauseCommand { get; }
     public ICommand StopCommand { get; }
     public ICommand SelectTaskCommand { get; }
     public ICommand RequestDeleteCommand { get; }
+
+    /// <summary>Seleciona todas as tarefas deste grupo (menu de clique direito no
+    /// cabeçalho) — ver comentário na implementação, TimeTrackingViewModel.SelectGroup.</summary>
+    public ICommand SelectGroupCommand { get; }
 
     /// <summary>Repassado da TimeTrackingViewModel (seleção múltipla para exclusão em lote).
     /// Não precisa de notificação própria: alternar o modo de seleção reconstrói os grupos
@@ -50,10 +53,10 @@ public partial class DayGroupViewModel : ObservableObject
         bool isExpanded,
         TimeSpan totalDuration,
         ICommand playCommand,
-        ICommand pauseCommand,
         ICommand stopCommand,
         ICommand selectTaskCommand,
         ICommand requestDeleteCommand,
+        ICommand selectGroupCommand,
         bool isSelectionMode)
     {
         Date = date;
@@ -63,10 +66,10 @@ public partial class DayGroupViewModel : ObservableObject
         _isExpanded = isExpanded;
         _totalDuration = totalDuration;
         PlayCommand = playCommand;
-        PauseCommand = pauseCommand;
         StopCommand = stopCommand;
         SelectTaskCommand = selectTaskCommand;
         RequestDeleteCommand = requestDeleteCommand;
+        SelectGroupCommand = selectGroupCommand;
         IsSelectionMode = isSelectionMode;
     }
 

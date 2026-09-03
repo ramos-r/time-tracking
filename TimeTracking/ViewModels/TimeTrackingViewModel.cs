@@ -56,6 +56,11 @@ public partial class TimeTrackingViewModel : ObservableObject
 
     private readonly HashSet<int> _selectedTaskIds = new();
 
+    // Grupo (dia) cujo menu de clique direito "Selecionar" foi usado por último — é o
+    // escopo do botão "Selecionar todas" do header (Seção 68 — ajuste): nunca todos os
+    // dias de uma vez, só o dia que o usuário escolheu.
+    private List<TaskListItemViewModel> _activeSelectionGroupTasks = new();
+
     public bool HasSelection => _selectedTaskIds.Count > 0;
 
     public string SelectedCountDisplay => _selectedTaskIds.Count switch
@@ -159,10 +164,10 @@ public partial class TimeTrackingViewModel : ObservableObject
                 isExpanded,
                 data.TotalDuration,
                 PlayCommand,
-                PauseCommand,
                 StopCommand,
                 SelectTaskCommand,
                 RequestDeleteCommand,
+                SelectGroupCommand,
                 IsSelectionMode));
         }
 
@@ -234,13 +239,6 @@ public partial class TimeTrackingViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task PauseAsync(TaskListItemViewModel item)
-    {
-        await _timerService.PauseAsync(item.Id);
-        await LoadTasksAsync();
-    }
-
-    [RelayCommand]
     private async Task StopAsync(TaskListItemViewModel item)
     {
         await _timerService.StopAsync(item.Id);
@@ -297,20 +295,37 @@ public partial class TimeTrackingViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ToggleSelectionMode()
-    {
-        IsSelectionMode = !IsSelectionMode;
-        if (!IsSelectionMode)
-        {
-            ClearSelection();
-        }
-    }
-
-    [RelayCommand]
     private void CancelSelectionMode()
     {
         IsSelectionMode = false;
         ClearSelection();
+    }
+
+    /// <summary>Menu de clique direito no cabeçalho do grupo, ex.: "Hoje, 02/09". Só revela as
+    /// caixinhas de seleção (modo de seleção) e marca este grupo como o alvo do botão
+    /// "Selecionar todas" do header — não marca nenhuma tarefa sozinho, o usuário escolhe
+    /// manualmente ou usa "Selecionar todas" em seguida.</summary>
+    [RelayCommand]
+    private void SelectGroup(DayGroupViewModel group)
+    {
+        IsSelectionMode = true;
+        _activeSelectionGroupTasks = group.Tasks.ToList();
+    }
+
+    /// <summary>Botão "Selecionar todas" do header (ao lado de "Excluir selecionadas") —
+    /// marca todas as tarefas do grupo escolhido por último via clique direito, nunca de
+    /// todos os dias de uma vez. Não afeta seleções já feitas em outros grupos.</summary>
+    [RelayCommand]
+    private void SelectAllInActiveGroup()
+    {
+        foreach (var task in _activeSelectionGroupTasks)
+        {
+            task.IsSelected = true;
+            _selectedTaskIds.Add(task.Id);
+        }
+
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(SelectedCountDisplay));
     }
 
     private void ToggleTaskSelection(TaskListItemViewModel item)
@@ -329,7 +344,12 @@ public partial class TimeTrackingViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedCountDisplay));
     }
 
-    private void ClearSelection()
+    /// <summary>Botão "Desmarcar todas" do header — só habilitado quando há pelo menos uma
+    /// tarefa selecionada (Style="{StaticResource ...}" IsEnabled bound a HasSelection).
+    /// Desmarca tudo mas permanece no modo de seleção (diferente de "Cancelar", que sai do
+    /// modo) e mantém o grupo ativo de "Selecionar todas" intacto.</summary>
+    [RelayCommand]
+    private void DeselectAll()
     {
         _selectedTaskIds.Clear();
         foreach (var task in Tasks)
@@ -339,6 +359,12 @@ public partial class TimeTrackingViewModel : ObservableObject
 
         OnPropertyChanged(nameof(HasSelection));
         OnPropertyChanged(nameof(SelectedCountDisplay));
+    }
+
+    private void ClearSelection()
+    {
+        DeselectAll();
+        _activeSelectionGroupTasks = new List<TaskListItemViewModel>();
     }
 
     [RelayCommand]

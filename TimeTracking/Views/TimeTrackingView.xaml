@@ -110,10 +110,6 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="1" Orientation="Horizontal"
                         Visibility="{Binding IsSelectionMode, Converter={StaticResource InverseBoolToVisibility}}">
-                <Button Command="{Binding ToggleSelectionModeCommand}"
-                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0">
-                    <TextBlock Text="Selecionar" />
-                </Button>
                 <Button Command="{Binding StartQuickTaskCommand}"
                         Style="{StaticResource PrimaryButtonStyle}" Margin="0,0,8,0">
                     <StackPanel Orientation="Horizontal">
@@ -134,12 +130,24 @@
                 </Button>
             </StackPanel>
 
-            <!-- Modo de seleção múltipla (exclusão em lote) — adicional ao menu "..."/clique
-                 direito individual, que continuam funcionando normalmente em qualquer modo. -->
+            <!-- Modo de seleção múltipla (exclusão em lote) — entrado via clique direito no
+                 cabeçalho de um grupo de data ("Selecionar", Seção 68). Só revela as caixinhas,
+                 sem marcar nada sozinho; "Selecionar todas" marca as tarefas do grupo escolhido
+                 por último, nunca de todos os dias de uma vez. O menu "..."/clique direito
+                 individual das tarefas continuam funcionando normalmente em qualquer modo. -->
             <StackPanel Grid.Column="1" Orientation="Horizontal"
                         Visibility="{Binding IsSelectionMode, Converter={StaticResource BoolToVisibility}}">
                 <TextBlock Text="{Binding SelectedCountDisplay}" VerticalAlignment="Center" Margin="0,0,16,0"
                            FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" />
+                <Button Command="{Binding SelectAllInActiveGroupCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0">
+                    <TextBlock Text="Selecionar todas" />
+                </Button>
+                <Button Command="{Binding DeselectAllCommand}"
+                        IsEnabled="{Binding HasSelection}"
+                        Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0">
+                    <TextBlock Text="Desmarcar todas" />
+                </Button>
                 <Button Command="{Binding CancelSelectionModeCommand}"
                         Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0">
                     <TextBlock Text="Cancelar" />

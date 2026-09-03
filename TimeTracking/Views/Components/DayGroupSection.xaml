@@ -18,6 +18,16 @@
                 <Border.InputBindings>
                     <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleExpandCommand}" />
                 </Border.InputBindings>
+                <!-- Clique direito: "Selecionar" marca todas as tarefas deste grupo para
+                     exclusão em lote (Seção 68 — ajuste). Só este grupo, nunca todos os dias
+                     de uma vez; repetir em outro grupo soma à seleção sem perder a anterior. -->
+                <Border.ContextMenu>
+                    <ContextMenu Style="{StaticResource ThemedContextMenuStyle}">
+                        <MenuItem Header="Selecionar" Style="{StaticResource ThemedMenuItemStyle}"
+                                  Command="{Binding SelectGroupCommand}"
+                                  CommandParameter="{Binding}" />
+                    </ContextMenu>
+                </Border.ContextMenu>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -39,7 +49,7 @@
                                Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
 
                     <TextBlock Grid.Column="2" Text="{Binding TotalDurationDisplay}"
-                               FontFamily="Consolas" FontSize="14"
+                               FontFamily="Consolas" FontSize="18"
                                Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
                 </Grid>
             </Border>

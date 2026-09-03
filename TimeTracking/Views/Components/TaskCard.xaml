@@ -81,38 +81,28 @@
                        FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="12,0" />
 
             <!-- Botão Play: visível apenas quando esta tarefa NÃO está em execução (Seção 11).
-                 Tamanho aumentado (36->44) para facilitar o clique — estilo próprio
-                 (IconButtonLargeStyle) que não afeta o hambúrguer/"..."/navegação do calendário. -->
+                 Volta ao ícone circular original (IconButtonStyle, sem fundo colorido, sem
+                 parecer botão) — só maior que o tamanho inicial de 18px. -->
             <Button Grid.Column="3" ToolTip="Iniciar" VerticalAlignment="Center"
-                    Style="{StaticResource IconButtonLargeStyle}"
+                    Style="{StaticResource IconButtonStyle}" Width="24" Height="24"
                     Visibility="{Binding IsRunning, Converter={StaticResource InverseBoolToVisibility}}"
                     Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                    CommandParameter="{Binding}"
-                    Width="44" Height="44">
+                    CommandParameter="{Binding}">
                 <Path Data="{StaticResource PlayIconGeometry}" Fill="{DynamicResource PrimaryBrush}"
-                      Stretch="Uniform" Width="20" Height="20" />
+                      Stretch="Uniform" Width="24" Height="24" />
             </Button>
 
-            <!-- Pause/Stop: visíveis apenas quando esta é a tarefa em execução (Seção 12/14) -->
-            <StackPanel Grid.Column="3" Orientation="Horizontal"
-                        Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}">
-                <Button ToolTip="Pausar" VerticalAlignment="Center"
-                        Style="{StaticResource IconButtonLargeStyle}"
-                        Command="{Binding DataContext.PauseCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                        CommandParameter="{Binding}"
-                        Width="44" Height="44">
-                    <Path Data="{StaticResource PauseIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
-                          Stretch="Uniform" Width="20" Height="20" />
-                </Button>
-                <Button ToolTip="Parar" VerticalAlignment="Center"
-                        Style="{StaticResource IconButtonLargeStyle}"
-                        Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                        CommandParameter="{Binding}"
-                        Width="44" Height="44">
-                    <Path Data="{StaticResource StopIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
-                          Stretch="Uniform" Width="20" Height="20" />
-                </Button>
-            </StackPanel>
+            <!-- Stop: visível apenas quando esta é a tarefa em execução (Seção 14). O botão de
+                 Pausar foi removido — Stop já cumpre a mesma função mecânica (Seção 34), então
+                 manter os dois era redundante. -->
+            <Button Grid.Column="3" ToolTip="Parar" VerticalAlignment="Center"
+                    Style="{StaticResource IconButtonStyle}" Width="24" Height="24"
+                    Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}"
+                    Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CommandParameter="{Binding}">
+                <Path Data="{StaticResource StopIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
+                      Stretch="Uniform" Width="24" Height="24" />
+            </Button>
 
             <!-- Menu "..." (Editar/Excluir): substitui os botões de texto fixos fora da área de edição -->
             <Button Grid.Column="4" ToolTip="Mais opções" VerticalAlignment="Center"
