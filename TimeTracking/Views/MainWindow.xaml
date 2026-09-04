@@ -90,7 +90,21 @@
                 <components:Sidebar DataContext="{Binding}" />
             </Border>
 
-            <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" />
+            <Grid Grid.Column="1">
+                <ContentControl Content="{Binding CurrentViewModel}" />
+
+                <!-- Clique fora do menu fecha ele (Seção 19) — sem escurecer (Seção 71), só
+                     um Border transparente que existe apenas enquanto o menu está aberto. Ficou
+                     faltando quando o overlay escurecido foi removido para o menu "empurrar" o
+                     conteúdo em vez de sobrepor (Seção 71, feedback de usuário: o clique fora
+                     parou de fechar o menu). -->
+                <Border Background="Transparent"
+                        Visibility="{Binding IsSidebarOpen, Converter={StaticResource BoolToVisibility}}">
+                    <Border.InputBindings>
+                        <MouseBinding MouseAction="LeftClick" Command="{Binding CloseSidebarCommand}" />
+                    </Border.InputBindings>
+                </Border>
+            </Grid>
         </Grid>
     </DockPanel>
 </Window>

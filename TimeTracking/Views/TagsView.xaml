@@ -171,10 +171,21 @@
         </ScrollViewer>
         </Grid>
 
+        <!-- Clique fora do painel de edição fecha ele (Seção 71) — sem escurecer, só um Border
+             transparente que existe apenas enquanto o editor está aberto. Ficou faltando quando
+             o overlay escurecido foi removido para o painel "empurrar" o conteúdo em vez de
+             sobrepor (Seção 71, feedback de usuário: o clique fora parou de fechar o painel). -->
+        <Border Grid.Column="0" Background="Transparent"
+                Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
+            <Border.InputBindings>
+                <MouseBinding MouseAction="LeftClick" Command="{Binding CloseEditorCommand}" />
+            </Border.InputBindings>
+        </Border>
+
         <!-- Painel de criação/edição de tag: coluna própria que anima a largura (0↔360) para
              empurrar o conteúdo à esquerda, sem camada escurecida atrás (Seção 71, feedback de
-             usuário) — mesmo padrão de TimeTrackingView.xaml. Fecha só pelos botões
-             Cancelar/Salvar do próprio formulário. -->
+             usuário) — mesmo padrão de TimeTrackingView.xaml. Fecha pelos botões
+             Cancelar/Salvar ou clicando fora dele (Border acima). -->
         <Border Grid.Column="1" ClipToBounds="True" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0">
             <Border.Style>

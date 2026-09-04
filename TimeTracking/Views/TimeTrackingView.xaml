@@ -283,11 +283,23 @@
         </ScrollViewer>
         </Grid>
 
+        <!-- Clique fora do painel de edição fecha ele (Seção 20) — sem escurecer (Seção 71),
+             só um Border transparente que existe apenas enquanto o editor está aberto. Ficou
+             faltando quando o overlay escurecido foi removido para o painel "empurrar" o
+             conteúdo em vez de sobrepor (Seção 71, feedback de usuário: o clique fora parou de
+             fechar o painel). -->
+        <Border Grid.Column="0" Background="Transparent"
+                Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
+            <Border.InputBindings>
+                <MouseBinding MouseAction="LeftClick" Command="{Binding CloseEditorCommand}" />
+            </Border.InputBindings>
+        </Border>
+
         <!-- Painel direito de edição/criação (Seção 20): agora uma coluna própria que anima a
              largura (0↔360) para empurrar o conteúdo à esquerda, sem camada escurecida atrás
-             (Seção 71, feedback de usuário) — fecha só pelos botões Cancelar/Salvar do próprio
-             formulário. O Border interno de largura fixa evita que o formulário reflua/aperte
-             enquanto a largura do host ainda está animando. -->
+             (Seção 71, feedback de usuário) — fecha pelos botões Cancelar/Salvar ou clicando
+             fora dele (Border acima). O Border interno de largura fixa evita que o formulário
+             reflua/aperte enquanto a largura do host ainda está animando. -->
         <Border Grid.Column="1" ClipToBounds="True" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0">
             <Border.Style>
