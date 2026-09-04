@@ -68,7 +68,17 @@ public partial class DayGroupSection : UserControl
 
     /// <summary>Altura e opacidade não têm "Auto" animável no WPF — por isso a altura-alvo é
     /// medida aqui e as duas propriedades são animadas juntas (Seção 68 — ajuste visual,
-    /// item 4: transição suave e discreta, sem bounce).</summary>
+    /// item 4: transição suave e discreta, sem bounce).
+    ///
+    /// O BeginAnimation(prop, null) só é chamado no caminho "sem animação": ele limpa
+    /// qualquer clock ativo e reverte a propriedade para o valor-base local (que aqui nunca é
+    /// atualizado durante uma transição animada, ficando parado em 0 desde o XAML) — chamar
+    /// isso ANTES de iniciar uma nova animação (como o código fazia antes deste fix) descartava
+    /// o valor atual e recomeçava do 0 "congelado", fazendo a transição seguinte (abrir, se a
+    /// anterior foi fechar; fechar, se a anterior foi abrir) pular instantaneamente para o
+    /// destino em vez de animar — exatamente o bug relatado (Seção 71, feedback de usuário:
+    /// só uma direção parecia suave). Sem essa limpeza prévia, o BeginAnimation novo já faz o
+    /// handoff sozinho a partir do valor efetivo atual (comportamento padrão do WPF).</summary>
     private void SetContentState(bool expanded, bool animate)
     {
         var availableWidth = TasksHost.ActualWidth > 0 ? TasksHost.ActualWidth : ContentHost.ActualWidth;
@@ -76,11 +86,10 @@ public partial class DayGroupSection : UserControl
         var targetHeight = expanded ? TasksHost.DesiredSize.Height : 0;
         var targetOpacity = expanded ? 1d : 0d;
 
-        ContentHost.BeginAnimation(HeightProperty, null);
-        ContentHost.BeginAnimation(OpacityProperty, null);
-
         if (!animate)
         {
+            ContentHost.BeginAnimation(HeightProperty, null);
+            ContentHost.BeginAnimation(OpacityProperty, null);
             ContentHost.Height = targetHeight;
             ContentHost.Opacity = targetOpacity;
             return;

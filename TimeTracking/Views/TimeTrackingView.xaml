@@ -13,8 +13,12 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibility" />
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <converters:ColorMatchToBorderBrushConverter x:Key="ColorMatchToBorderBrush" />
 
         <DataTemplate DataType="{x:Type vm:TaskEditorViewModel}">
+            <!-- Grid (não StackPanel) porque o popup "Nova tag" (Seção 71) precisa ficar em
+                 cima de todo o conteúdo do editor, não só empurrado abaixo dele. -->
+            <Grid>
             <StackPanel Margin="24">
                 <TextBlock Text="{Binding Title}" FontSize="17" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" Foreground="{DynamicResource TextPrimaryBrush}" />
 
@@ -30,10 +34,15 @@
 
                 <TextBlock Text="Tag" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
                 <StackPanel Orientation="Horizontal">
-                    <ComboBox Width="220" ItemsSource="{Binding AvailableTags}"
+                    <ComboBox Width="160" ItemsSource="{Binding AvailableTags}"
                               SelectedItem="{Binding SelectedTag}" DisplayMemberPath="Name" />
                     <Button Content="Limpar" Command="{Binding ClearTagCommand}" Margin="8,0,0,0"
                             Style="{StaticResource LinkButtonStyle}" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <!-- Cria uma tag sem sair do editor de tarefa (Seção 71, feedback de
+                         usuário) — abre o popup abaixo em vez de obrigar o usuário a ir até a
+                         tela Tags. -->
+                    <Button Content="Nova tag" Command="{Binding OpenNewTagCommand}" Margin="8,0,0,0"
+                            Style="{StaticResource LinkButtonStyle}" Foreground="{DynamicResource PrimaryBrush}" />
                 </StackPanel>
 
                 <!-- Data/hora (Seção 17): visíveis para tarefa existente com sessão(ões) e
@@ -94,10 +103,99 @@
                             Style="{StaticResource PrimaryButtonStyle}" />
                 </StackPanel>
             </StackPanel>
+
+            <!-- Popup "Nova tag" (Seção 71): mesmo formulário do editor de tag da tela Tags
+                 (nome/descrição/cor/salvar/cancelar), só que como um cartão centralizado sobre
+                 o próprio editor de tarefa em vez de um painel lateral — o usuário nunca sai
+                 daqui para criar a tag. -->
+            <Border Background="{DynamicResource OverlayBrush}"
+                    Visibility="{Binding IsTagEditorOpen, Converter={StaticResource BoolToVisibility}}">
+                <Border Background="{DynamicResource SurfaceElevatedBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1" CornerRadius="8"
+                        Padding="24" MaxWidth="312" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel DataContext="{Binding TagEditor}">
+                        <TextBlock Text="{Binding Title}" FontSize="17" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" Foreground="{DynamicResource TextPrimaryBrush}" />
+
+                        <TextBlock Text="Nome" Margin="0,20,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Padding="8" />
+                        <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                                   Visibility="{Binding NameError, Converter={StaticResource NullOrEmptyToVisibility}}" />
+
+                        <TextBlock Text="Descrição" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True" TextWrapping="Wrap" Height="60" Padding="8"
+                                 VerticalScrollBarVisibility="Auto" />
+
+                        <TextBlock Text="Cor" Margin="0,16,0,4" Opacity="0.7" FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <ItemsControl ItemsSource="{Binding PaletteColors}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Width="28" Height="28" Margin="0,0,8,8" Background="{Binding}"
+                                            BorderThickness="2" Cursor="Hand"
+                                            Command="{Binding DataContext.SelectColorCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Button.BorderBrush>
+                                            <MultiBinding Converter="{StaticResource ColorMatchToBorderBrush}">
+                                                <Binding Path="." />
+                                                <Binding Path="DataContext.Color" RelativeSource="{RelativeSource AncestorType=ItemsControl}" />
+                                            </MultiBinding>
+                                        </Button.BorderBrush>
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Ellipse x:Name="Dot" Fill="{TemplateBinding Background}"
+                                                         Stroke="{TemplateBinding BorderBrush}"
+                                                         StrokeThickness="2" />
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Dot" Property="Opacity" Value="0.8" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBox Text="{Binding Color, UpdateSourceTrigger=PropertyChanged}" Padding="8" Margin="0,4,0,0"
+                                 FontFamily="Consolas" MaxLength="7" />
+                        <TextBlock Text="{Binding ColorError}" Foreground="{DynamicResource DangerBrush}" FontSize="11" Margin="0,4,0,0"
+                                   Visibility="{Binding ColorError, Converter={StaticResource NullOrEmptyToVisibility}}" />
+
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DangerBrush}" FontSize="12" Margin="0,16,0,0"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding ErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,24,0,0">
+                            <Button Content="Cancelar" Command="{Binding CancelCommand}" Margin="0,0,8,0"
+                                    Style="{StaticResource SecondaryButtonStyle}" />
+                            <Button Content="Salvar" Command="{Binding SaveCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Border>
+            </Grid>
         </DataTemplate>
     </UserControl.Resources>
 
+    <!-- Layout raiz: coluna do conteúdo (header+lista) + coluna do painel de edição, que
+         empurra o conteúdo ao abrir (largura anima 0↔360) em vez de deslizar por cima com uma
+         camada escurecida atrás (Seção 71, feedback de usuário). Os diálogos de confirmação
+         (exclusão, conflito de timer) continuam como overlay escurecido de verdade — são
+         modais bloqueantes, não navegação — por isso cobrem as duas colunas
+         (Grid.ColumnSpan="2") em vez de ganhar uma coluna própria. -->
     <Grid ClipToBounds="True">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -183,48 +281,31 @@
                 </ItemsControl>
             </StackPanel>
         </ScrollViewer>
+        </Grid>
 
-        <!-- Painel direito de edição/criação (Seção 20) -->
-        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
-                Visibility="{Binding IsEditorOpen, Converter={StaticResource BoolToVisibility}}">
-            <Border.InputBindings>
-                <MouseBinding MouseAction="LeftClick" Command="{Binding CloseEditorCommand}" />
-            </Border.InputBindings>
-        </Border>
-
-        <Border Grid.RowSpan="2" HorizontalAlignment="Right" Width="360" Background="{DynamicResource SurfaceBrush}"
+        <!-- Painel direito de edição/criação (Seção 20): agora uma coluna própria que anima a
+             largura (0↔360) para empurrar o conteúdo à esquerda, sem camada escurecida atrás
+             (Seção 71, feedback de usuário) — fecha só pelos botões Cancelar/Salvar do próprio
+             formulário. O Border interno de largura fixa evita que o formulário reflua/aperte
+             enquanto a largura do host ainda está animando. -->
+        <Border Grid.Column="1" ClipToBounds="True" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0">
-            <Border.RenderTransform>
-                <TranslateTransform X="360" />
-            </Border.RenderTransform>
-            <!-- Visibility é controlada só pelo storyboard (nunca por um Setter/Binding direto):
-                 um Binding de Visibility na base do elemento reverteria para Collapsed no
-                 instante em que IsEditorOpen vira False — antes da animação de saída (150ms)
-                 ter qualquer chance de aparecer, já que Collapsed remove o elemento do render
-                 imediatamente. Animar Visibility dentro do próprio ExitActions (com o
-                 DiscreteObjectKeyFrame no fim da duração) evita essa corrida. -->
             <Border.Style>
                 <Style TargetType="Border">
-                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Setter Property="Width" Value="0" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsEditorOpen}" Value="True">
                             <DataTrigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Visibility">
-                                            <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="{x:Static Visibility.Visible}" />
-                                        </ObjectAnimationUsingKeyFrames>
-                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X" To="0" Duration="0:0:0.18" />
+                                        <DoubleAnimation Storyboard.TargetProperty="Width" To="360" Duration="0:0:0.18" />
                                     </Storyboard>
                                 </BeginStoryboard>
                             </DataTrigger.EnterActions>
                             <DataTrigger.ExitActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X" To="360" Duration="0:0:0.15" />
-                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetProperty="Visibility">
-                                            <DiscreteObjectKeyFrame KeyTime="0:0:0.15" Value="{x:Static Visibility.Collapsed}" />
-                                        </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetProperty="Width" To="0" Duration="0:0:0.15" />
                                     </Storyboard>
                                 </BeginStoryboard>
                             </DataTrigger.ExitActions>
@@ -232,13 +313,17 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
-                <ContentControl Content="{Binding Editor}" />
-            </ScrollViewer>
+            <Border Width="360">
+                <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                    <ContentControl Content="{Binding Editor}" />
+                </ScrollViewer>
+            </Border>
         </Border>
 
-        <!-- Confirmação de exclusão (Seção 23, componente da Seção 30) -->
-        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
+        <!-- Confirmação de exclusão (Seção 23, componente da Seção 30) — diálogo modal de
+             verdade (bloqueia a tela toda, Grid.ColumnSpan cobre conteúdo + coluna do editor),
+             diferente do painel de edição acima. -->
+        <Border Grid.ColumnSpan="2" Background="{DynamicResource OverlayBrush}"
                 Visibility="{Binding IsDeleteConfirmOpen, Converter={StaticResource BoolToVisibility}}">
             <components:ConfirmDialog Title="Excluir tarefa?"
                                        Message="{Binding DeleteConfirmMessage}"
@@ -249,7 +334,7 @@
 
         <!-- Confirmação de exclusão em lote (seleção múltipla) — diálogo próprio, não
              interfere com a confirmação de exclusão individual acima. -->
-        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
+        <Border Grid.ColumnSpan="2" Background="{DynamicResource OverlayBrush}"
                 Visibility="{Binding IsBulkDeleteConfirmOpen, Converter={StaticResource BoolToVisibility}}">
             <components:ConfirmDialog Title="Excluir tarefas selecionadas?"
                                        Message="{Binding BulkDeleteConfirmMessage}"
@@ -259,7 +344,7 @@
         </Border>
 
         <!-- Conflito de timer: só uma tarefa ativa por vez (Seção 15) — não é destrutivo -->
-        <Border Grid.RowSpan="2" Background="{DynamicResource OverlayBrush}"
+        <Border Grid.ColumnSpan="2" Background="{DynamicResource OverlayBrush}"
                 Visibility="{Binding IsPlayConflictOpen, Converter={StaticResource BoolToVisibility}}">
             <components:ConfirmDialog Title="Tarefa em execução"
                                        Message="{Binding PlayConflictMessage}"

@@ -111,12 +111,13 @@
         </Setter>
     </Style>
 
-    <!-- Botão de ação da tarefa (Retomar/Parar, card da tarefa) — mesmo visual "sem fundo"
-         do IconButtonStyle, mas com Padding aplicado ao conteúdo (ícone + texto lado a
-         lado), já que IconButtonStyle não repassa Padding ao ContentPresenter (pensado só
-         para ícones quadrados de tamanho fixo). -->
-    <Style x:Key="TaskActionButtonStyle" TargetType="Button">
-        <Setter Property="Background" Value="Transparent" />
+    <!-- Botão de ação da tarefa na cor de destaque (Retomar/Iniciar) — mesmo
+         tamanho/espaçamento interno do TaskStopButtonStyle (Padding 10,6 / FontSize 13), só
+         com fundo sólido na cor de destaque em vez de cinza translúcido (Seção 71, feedback
+         de usuário: os dois precisam combinar em tamanho, só a cor difere). -->
+    <Style x:Key="TaskPlayButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextOnPrimaryBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Padding" Value="10,6" />
@@ -126,16 +127,73 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid>
-                        <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="6" />
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="6" />
                         <ContentPresenter Margin="{TemplateBinding Padding}"
                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
                         <Border x:Name="FocusRing" CornerRadius="6" BorderThickness="2" BorderBrush="Transparent"
                                 IsHitTestVisible="False" />
                     </Grid>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource TextOnPrimaryBrush}" />
                         </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource PrimaryHoverBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource PrimaryPressedBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Botão de ação da tarefa em cinza (Parar) — ícone + texto, área clicável clara com
+         fundo e hover, neutro em vez de usar a cor de destaque (Seção 71, feedback de
+         usuário: "Parar" deve ficar em cinza, não na cor de destaque do "Retomar"). Fundo é
+         TextSecondaryBrush translúcido (não um tom fixo)
+         para garantir contraste correto nos dois temas sem precisar de uma cor nova em
+         Dark.xaml/Light.xaml — essa brush já é calibrada para ler bem contra a superfície do
+         próprio tema. -->
+    <Style x:Key="TaskStopButtonStyle" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyLight}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <!-- Opacity do "Bg" precisa vir de um Style (não de um atributo literal
+                             como antes) — um valor local sempre vence um Setter de
+                             ControlTemplate.Triggers no WPF, o que fazia o hover nunca ter
+                             efeito visual (mesma classe de bug já documentada em
+                             TaskCard.xaml). Com Style.Triggers dentro do próprio Border, tanto
+                             o padrão quanto o hover passam pelo sistema de Style e o segundo
+                             sobrescreve o primeiro normalmente. -->
+                        <Border x:Name="Bg" Background="{DynamicResource TextSecondaryBrush}" CornerRadius="6">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Opacity" Value="0.16" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Opacity" Value="0.28" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Border x:Name="FocusRing" CornerRadius="6" BorderThickness="2" BorderBrush="Transparent"
+                                IsHitTestVisible="False" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
                         </Trigger>

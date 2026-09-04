@@ -50,48 +50,47 @@
             </StackPanel>
         </Border>
 
-        <!-- Área de conteúdo + sidebar em overlay -->
+        <!-- Área de conteúdo + sidebar: agora empurra o conteúdo (largura anima 0↔240) em vez
+             de deslizar por cima com uma camada escurecida atrás (Seção 71, feedback de
+             usuário) — a Sidebar em si mantém sua largura interna fixa de 240 (Sidebar.xaml);
+             quem anima é este Border externo, que a recorta (ClipToBounds) enquanto cresce,
+             revelando o conteúdo progressivamente em vez de traduzi-la como um bloco. -->
         <Grid ClipToBounds="True">
-            <ContentControl Content="{Binding CurrentViewModel}" />
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <!-- Camada escurecida: clicar aqui fecha o menu (Seção 19) -->
-            <Border Background="{DynamicResource OverlayBrush}"
-                    Visibility="{Binding IsSidebarOpen, Converter={StaticResource BoolToVisibility}}">
-                <Border.InputBindings>
-                    <MouseBinding MouseAction="LeftClick" Command="{Binding CloseSidebarCommand}" />
-                </Border.InputBindings>
-            </Border>
-
-            <!-- Sidebar propriamente dita, deslizando por cima do conteúdo -->
-            <components:Sidebar HorizontalAlignment="Left" DataContext="{Binding}">
-                <components:Sidebar.RenderTransform>
-                    <TranslateTransform X="-240" />
-                </components:Sidebar.RenderTransform>
-                <components:Sidebar.Style>
-                    <Style TargetType="components:Sidebar">
+            <Border Grid.Column="0" ClipToBounds="True">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Width" Value="0" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsSidebarOpen}" Value="True">
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X"
-                                                             To="0" Duration="0:0:0.18" />
+                                            <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                             To="240" Duration="0:0:0.18" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.EnterActions>
                                 <DataTrigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="RenderTransform.X"
-                                                             To="-240" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetProperty="Width"
+                                                             To="0" Duration="0:0:0.15" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.ExitActions>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </components:Sidebar.Style>
-            </components:Sidebar>
+                </Border.Style>
+                <components:Sidebar DataContext="{Binding}" />
+            </Border>
+
+            <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" />
         </Grid>
     </DockPanel>
 </Window>

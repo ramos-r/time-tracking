@@ -136,32 +136,35 @@
                        FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="12,0" />
 
             <!-- Botão Play: visível apenas quando esta tarefa NÃO está em execução (Seção 11).
-                 Ícone + texto "Retomar" (Seção 71, feedback de usuário) — mesmo ícone de
-                 antes, só com o rótulo ao lado (ícone à esquerda, texto à direita). -->
+                 Ícone + texto "Retomar" (Seção 71, feedback de usuário). Fundo sólido na cor de
+                 destaque (PrimaryButtonStyle, mesmo estilo/hover dos outros botões primários da
+                 tela, ex.: "Iniciar timer") — antes era só texto sobre fundo transparente e a
+                 área clicável não ficava clara (Seção 71, novo feedback de usuário). -->
             <Button Grid.Column="3" ToolTip="{Binding HasStarted, Converter={StaticResource HasStartedToResumeText}}" VerticalAlignment="Center"
-                    Style="{StaticResource TaskActionButtonStyle}"
+                    Style="{StaticResource TaskPlayButtonStyle}"
                     Visibility="{Binding IsRunning, Converter={StaticResource InverseBoolToVisibility}}"
                     Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}">
                 <StackPanel Orientation="Horizontal">
-                    <Path Data="{StaticResource PlayIconGeometry}" Fill="{DynamicResource PrimaryBrush}"
+                    <Path Data="{StaticResource PlayIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                           Stretch="Uniform" Width="20" Height="20" Margin="0,0,6,0" />
-                    <TextBlock Text="{Binding HasStarted, Converter={StaticResource HasStartedToResumeText}}" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding HasStarted, Converter={StaticResource HasStartedToResumeText}}" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
 
             <!-- Stop: visível apenas quando esta é a tarefa em execução (Seção 14). Ícone +
-                 texto "Parar" (Seção 71, feedback de usuário) — mesmo ícone de antes, só com
-                 o rótulo ao lado. -->
+                 texto "Parar" (Seção 71, feedback de usuário). Fundo cinza (TaskStopButtonStyle)
+                 em vez da cor de destaque do Retomar — mesma área clicável clara + hover,
+                 só que neutro (Seção 71, novo feedback de usuário). -->
             <Button Grid.Column="3" ToolTip="Parar" VerticalAlignment="Center"
-                    Style="{StaticResource TaskActionButtonStyle}"
+                    Style="{StaticResource TaskStopButtonStyle}"
                     Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}"
                     Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}">
                 <StackPanel Orientation="Horizontal">
-                    <Path Data="{StaticResource StopIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
+                    <Path Data="{StaticResource StopIconGeometry}" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                           Stretch="Uniform" Width="20" Height="20" Margin="0,0,6,0" />
-                    <TextBlock Text="Parar" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="Parar" VerticalAlignment="Center" />
                 </StackPanel>
             </Button>
 
