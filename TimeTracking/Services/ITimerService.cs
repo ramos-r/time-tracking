@@ -38,4 +38,10 @@ public interface ITimerService
     /// registrada com duração zero e a tarefa entra em estado "pausada" — nunca em execução —
     /// até o usuário dar Play para continuar.</summary>
     Task AddManualEntryAsync(int taskId, DateTime startedAtUtc, DateTime endedAtUtc);
+
+    /// <summary>Disparado sempre que uma sessão é aberta ou encerrada, ou seja, quando a
+    /// existência de uma tarefa ativa (Seção 15) pode ter mudado. Usado pela MainWindow para
+    /// trocar o ícone da barra de tarefas (Seção 71, feedback de usuário) sem precisar de
+    /// polling.</summary>
+    event Action? ActiveTaskChanged;
 }

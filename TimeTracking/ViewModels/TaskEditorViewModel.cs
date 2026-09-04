@@ -26,6 +26,7 @@ public partial class TaskEditorViewModel : ObservableObject
     private readonly ITagService _tagService;
     private readonly ITimerService _timerService;
     private readonly IClock _clock;
+    private readonly Func<TagEditorViewModel> _tagEditorFactory;
     private int? _editingTaskId;
     private int? _singleEntryId;
 
@@ -74,6 +75,15 @@ public partial class TaskEditorViewModel : ObservableObject
     [ObservableProperty]
     private string _totalElapsedDisplay = "00:00:00";
 
+    // Popup "Nova tag" (Seção 71, feedback de usuário): permite criar uma tag sem fechar o
+    // editor de tarefa e ir até a tela Tags — reaproveita o mesmo TagEditorViewModel/formulário
+    // usado lá, só que exibido como um popup centralizado em vez do painel lateral inteiro.
+    [ObservableProperty]
+    private bool _isTagEditorOpen;
+
+    [ObservableProperty]
+    private TagEditorViewModel? _tagEditor;
+
     public string Title => IsNew ? "Nova tarefa" : "Editar tarefa";
 
     public bool HasNoEntries => TimeEntryCount == 0;
@@ -90,12 +100,13 @@ public partial class TaskEditorViewModel : ObservableObject
     public event Action? Saved;
     public event Action? CloseRequested;
 
-    public TaskEditorViewModel(ITaskService taskService, ITagService tagService, ITimerService timerService, IClock clock)
+    public TaskEditorViewModel(ITaskService taskService, ITagService tagService, ITimerService timerService, IClock clock, Func<TagEditorViewModel> tagEditorFactory)
     {
         _taskService = taskService;
         _tagService = tagService;
         _timerService = timerService;
         _clock = clock;
+        _tagEditorFactory = tagEditorFactory;
     }
 
     public async Task LoadForNewAsync()
@@ -371,4 +382,42 @@ public partial class TaskEditorViewModel : ObservableObject
 
     [RelayCommand]
     private void ClearTag() => SelectedTag = null;
+
+    [RelayCommand]
+    private async Task OpenNewTagAsync()
+    {
+        var editor = _tagEditorFactory();
+        editor.Saved += OnTagEditorSaved;
+        editor.CloseRequested += OnTagEditorClosed;
+        await editor.LoadForNewAsync();
+        TagEditor = editor;
+        IsTagEditorOpen = true;
+    }
+
+    private async void OnTagEditorSaved()
+    {
+        var createdTag = TagEditor?.CreatedTag;
+        CloseTagEditor();
+        await LoadTagsAsync();
+
+        if (createdTag is not null)
+        {
+            SelectedTag = AvailableTags.FirstOrDefault(t => t.Id == createdTag.Id);
+        }
+    }
+
+    private void OnTagEditorClosed() => CloseTagEditor();
+
+    [RelayCommand]
+    private void CloseTagEditor()
+    {
+        if (TagEditor is not null)
+        {
+            TagEditor.Saved -= OnTagEditorSaved;
+            TagEditor.CloseRequested -= OnTagEditorClosed;
+        }
+
+        IsTagEditorOpen = false;
+        TagEditor = null;
+    }
 }

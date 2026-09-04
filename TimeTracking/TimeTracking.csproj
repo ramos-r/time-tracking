@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <ApplicationIcon>Resources\Icons\AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -25,6 +25,7 @@
     <Resource Include="Resources\Fonts\Montserrat-Regular.ttf" />
     <Resource Include="Resources\Fonts\Montserrat-Light.ttf" />
     <Resource Include="Resources\Icons\AppIcon.ico" />
+    <Resource Include="Resources\Icons\AppIconWorking.ico" />
     <Resource Include="Resources\Images\Logo-Tema-Escuro.png" />
     <Resource Include="Resources\Images\Logo-Tema-Claro.png" />
   </ItemGroup>

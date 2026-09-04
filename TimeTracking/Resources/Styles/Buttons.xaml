@@ -111,6 +111,40 @@
         </Setter>
     </Style>
 
+    <!-- Botão de ação da tarefa (Retomar/Parar, card da tarefa) — mesmo visual "sem fundo"
+         do IconButtonStyle, mas com Padding aplicado ao conteúdo (ícone + texto lado a
+         lado), já que IconButtonStyle não repassa Padding ao ContentPresenter (pensado só
+         para ícones quadrados de tamanho fixo). -->
+    <Style x:Key="TaskActionButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamilyLight}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid>
+                        <Border x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="6" />
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Border x:Name="FocusRing" CornerRadius="6" BorderThickness="2" BorderBrush="Transparent"
+                                IsHitTestVisible="False" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource PrimaryBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Botão de ação destrutiva (Excluir selecionadas). -->
     <Style x:Key="DangerButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="{DynamicResource DangerBrush}" />

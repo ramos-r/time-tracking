@@ -22,6 +22,12 @@ public partial class TaskListItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isRunning;
 
+    // Distingue "nunca foi iniciada" (0 TimeEntry) de "pausada" (já teve pelo menos uma
+    // sessão) — usado para trocar o texto do botão/menu entre "Iniciar" e "Retomar"
+    // (Seção 71, feedback de usuário: tarefa recém-criada não pode dizer "Retomar").
+    [ObservableProperty]
+    private bool _hasStarted;
+
     [ObservableProperty]
     private bool _isSelected;
 
@@ -42,6 +48,7 @@ public partial class TaskListItemViewModel : ObservableObject
     {
         Status = status;
         IsRunning = status.IsRunning;
+        HasStarted = status.HasEntries;
         Elapsed = status.GetElapsed(now);
     }
 

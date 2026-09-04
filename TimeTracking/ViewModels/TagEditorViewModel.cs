@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TimeTracking.Models;
 using TimeTracking.Services;
 using Task = System.Threading.Tasks.Task;
 
@@ -42,6 +43,11 @@ public partial class TagEditorViewModel : ObservableObject
         "#C89B6D", "#7FAE82", "#6D8FC8", "#C86D9B",
         "#D3A85C", "#7FC8AE", "#C87575", "#9B7FC8"
     };
+
+    /// <summary>Tag recém-criada, preenchida após um Save bem-sucedido com IsNew=true. Usado
+    /// pelo popup "Nova tag" do editor de tarefa (Seção 71) para selecioná-la automaticamente
+    /// no ComboBox de tags assim que o popup fecha.</summary>
+    public Tag? CreatedTag { get; private set; }
 
     public event Action? Saved;
     public event Action? CloseRequested;
@@ -132,7 +138,7 @@ public partial class TagEditorViewModel : ObservableObject
 
             if (IsNew)
             {
-                await _tagService.CreateAsync(Name, Description, Color);
+                CreatedTag = await _tagService.CreateAsync(Name, Description, Color);
             }
             else
             {

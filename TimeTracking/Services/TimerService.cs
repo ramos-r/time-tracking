@@ -46,7 +46,7 @@ public class TimerService : ITimerService
             }
         }
 
-        return new TimerStatus(runningStartedAt.HasValue, closedTotal, runningStartedAt);
+        return new TimerStatus(runningStartedAt.HasValue, closedTotal, runningStartedAt, entries.Count > 0);
     }
 
     public async Task<DomainTask?> GetActiveTaskAsync()
@@ -54,6 +54,8 @@ public class TimerService : ITimerService
         var openEntry = await _timeEntryRepository.GetOpenEntryAsync();
         return openEntry is null ? null : await _taskRepository.GetByIdAsync(openEntry.TaskId);
     }
+
+    public event Action? ActiveTaskChanged;
 
     public async Task StartAsync(int taskId)
     {
@@ -76,6 +78,8 @@ public class TimerService : ITimerService
             StartedAt = _clock.UtcNow,
             EndedAt = null
         });
+
+        ActiveTaskChanged?.Invoke();
     }
 
     public async Task PauseAsync(int taskId)
@@ -85,6 +89,7 @@ public class TimerService : ITimerService
         {
             openEntry.EndedAt = _clock.UtcNow;
             await _timeEntryRepository.UpdateAsync(openEntry);
+            ActiveTaskChanged?.Invoke();
         }
     }
 

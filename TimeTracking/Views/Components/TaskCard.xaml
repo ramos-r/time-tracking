@@ -10,6 +10,7 @@
         <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibility" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <converters:HasStartedToResumeTextConverter x:Key="HasStartedToResumeText" />
     </UserControl.Resources>
 
     <Border Style="{StaticResource CardBorderStyle}" Cursor="Hand"
@@ -25,16 +26,67 @@
         <Border.ContextMenu>
             <ContextMenu Style="{StaticResource ThemedContextMenuStyle}"
                          DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
-                <MenuItem Header="Selecionar" Style="{StaticResource ThemedMenuItemStyle}"
+                <!-- Pausar/Retomar (Seção 71, feedback de usuário): só um dos dois fica
+                     visível por vez, de acordo com o estado da própria tarefa (PlacementTarget
+                     é o Border/Button cujo DataContext é o TaskListItemViewModel). -->
+                <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
+                          Command="{Binding StopCommand}"
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Visibility="{Binding PlacementTarget.DataContext.IsRunning, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVisibility}}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource PauseIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                  Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                            <TextBlock Text="Pausar" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
+                          Command="{Binding PlayCommand}"
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                          Visibility="{Binding PlacementTarget.DataContext.IsRunning, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVisibility}}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource PlayIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                  Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                            <TextBlock Text="{Binding PlacementTarget.DataContext.HasStarted, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource HasStartedToResumeText}}" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
                           Command="{Binding SelectSingleTaskCommand}"
-                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                <MenuItem Header="Editar" Style="{StaticResource ThemedMenuItemStyle}"
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource CursorIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                  Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                            <TextBlock Text="Selecionar" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
                           Command="{Binding SelectTaskCommand}"
-                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                <MenuItem Header="Excluir" Style="{StaticResource ThemedMenuItemStyle}"
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource PencilIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                  Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                            <TextBlock Text="Editar" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
                           Foreground="{DynamicResource DangerBrush}"
                           Command="{Binding RequestDeleteCommand}"
-                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource TrashIconGeometry}" Fill="{DynamicResource DangerBrush}"
+                                  Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                            <TextBlock Text="Excluir" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
             </ContextMenu>
         </Border.ContextMenu>
         <Grid>
@@ -84,27 +136,33 @@
                        FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="12,0" />
 
             <!-- Botão Play: visível apenas quando esta tarefa NÃO está em execução (Seção 11).
-                 Volta ao ícone circular original (IconButtonStyle, sem fundo colorido, sem
-                 parecer botão) — só maior que o tamanho inicial de 18px. -->
-            <Button Grid.Column="3" ToolTip="Iniciar" VerticalAlignment="Center"
-                    Style="{StaticResource IconButtonStyle}" Width="24" Height="24"
+                 Ícone + texto "Retomar" (Seção 71, feedback de usuário) — mesmo ícone de
+                 antes, só com o rótulo ao lado (ícone à esquerda, texto à direita). -->
+            <Button Grid.Column="3" ToolTip="{Binding HasStarted, Converter={StaticResource HasStartedToResumeText}}" VerticalAlignment="Center"
+                    Style="{StaticResource TaskActionButtonStyle}"
                     Visibility="{Binding IsRunning, Converter={StaticResource InverseBoolToVisibility}}"
                     Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}">
-                <Path Data="{StaticResource PlayIconGeometry}" Fill="{DynamicResource PrimaryBrush}"
-                      Stretch="Uniform" Width="24" Height="24" />
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource PlayIconGeometry}" Fill="{DynamicResource PrimaryBrush}"
+                          Stretch="Uniform" Width="20" Height="20" Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding HasStarted, Converter={StaticResource HasStartedToResumeText}}" Foreground="{DynamicResource PrimaryBrush}" VerticalAlignment="Center" />
+                </StackPanel>
             </Button>
 
-            <!-- Stop: visível apenas quando esta é a tarefa em execução (Seção 14). O botão de
-                 Pausar foi removido — Stop já cumpre a mesma função mecânica (Seção 34), então
-                 manter os dois era redundante. -->
+            <!-- Stop: visível apenas quando esta é a tarefa em execução (Seção 14). Ícone +
+                 texto "Parar" (Seção 71, feedback de usuário) — mesmo ícone de antes, só com
+                 o rótulo ao lado. -->
             <Button Grid.Column="3" ToolTip="Parar" VerticalAlignment="Center"
-                    Style="{StaticResource IconButtonStyle}" Width="24" Height="24"
+                    Style="{StaticResource TaskActionButtonStyle}"
                     Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}"
                     Command="{Binding DataContext.StopCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                     CommandParameter="{Binding}">
-                <Path Data="{StaticResource StopIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
-                      Stretch="Uniform" Width="24" Height="24" />
+                <StackPanel Orientation="Horizontal">
+                    <Path Data="{StaticResource StopIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
+                          Stretch="Uniform" Width="20" Height="20" Margin="0,0,6,0" />
+                    <TextBlock Text="Parar" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                </StackPanel>
             </Button>
 
             <!-- Menu "..." (Editar/Excluir): substitui os botões de texto fixos fora da área de edição -->
@@ -117,16 +175,64 @@
                 <Button.ContextMenu>
                     <ContextMenu Style="{StaticResource ThemedContextMenuStyle}"
                                  DataContext="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
-                        <MenuItem Header="Selecionar" Style="{StaticResource ThemedMenuItemStyle}"
+                        <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
+                                  Command="{Binding StopCommand}"
+                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                  Visibility="{Binding PlacementTarget.DataContext.IsRunning, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVisibility}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource PauseIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                          Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="Pausar" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
+                                  Command="{Binding PlayCommand}"
+                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                  Visibility="{Binding PlacementTarget.DataContext.IsRunning, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource InverseBoolToVisibility}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource PlayIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                          Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="Retomar" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
                                   Command="{Binding SelectSingleTaskCommand}"
-                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                        <MenuItem Header="Editar" Style="{StaticResource ThemedMenuItemStyle}"
+                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource CursorIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                          Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="Selecionar" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
                                   Command="{Binding SelectTaskCommand}"
-                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                        <MenuItem Header="Excluir" Style="{StaticResource ThemedMenuItemStyle}"
+                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource PencilIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                                          Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="Editar" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem Style="{StaticResource ThemedMenuItemStyle}"
                                   Foreground="{DynamicResource DangerBrush}"
                                   Command="{Binding RequestDeleteCommand}"
-                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                  CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource TrashIconGeometry}" Fill="{DynamicResource DangerBrush}"
+                                          Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0" />
+                                    <TextBlock Text="Excluir" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
                     </ContextMenu>
                 </Button.ContextMenu>
                 <Path Data="{StaticResource MoreIconGeometry}" Fill="{DynamicResource TextSecondaryBrush}"
