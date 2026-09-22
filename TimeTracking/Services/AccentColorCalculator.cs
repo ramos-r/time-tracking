@@ -69,22 +69,27 @@ public static class AccentColorCalculator
         return new AccentVariations(primary, hover, pressed, subtle, textOnPrimary);
     }
 
-    /// <summary>Escolhe entre um texto claro ou escuro por razão de contraste (luminância
-    /// relativa, padrão WCAG) — nunca fixo por tema, sempre calculado a partir da cor de
-    /// destaque real, já que ela pode ser qualquer matiz.</summary>
-    private static Color PickTextOnPrimary(Color background)
-    {
-        var contrastWithLight = ContrastRatio(background, LightText);
-        var contrastWithDark = ContrastRatio(background, DarkText);
-        return contrastWithLight >= contrastWithDark ? LightText : DarkText;
-    }
+    /// <summary>Luminância relativa acima da qual o fundo já é claro o bastante para pedir
+    /// texto escuro (abaixo disso, usa texto claro) — ver comentário de PickTextOnPrimary.
+    /// 0.4 (não 0.5) para que o teal predefinido, com a saturação reduzida (Seção 71, feedback
+    /// de usuário: cores predefinidas muito saturadas/"neon"), continue pedindo texto escuro —
+    /// sua luminância no tema Dark caiu para ~0.43 depois do ajuste, e ali o texto claro tem
+    /// contraste ruim (~1.9:1) contra o escuro (~8:1), uma diferença grande demais para ignorar.</summary>
+    private const double LightBackgroundLuminanceThreshold = 0.4;
 
-    private static double ContrastRatio(Color a, Color b)
-    {
-        var la = RelativeLuminance(a) + 0.05;
-        var lb = RelativeLuminance(b) + 0.05;
-        return la > lb ? la / lb : lb / la;
-    }
+    /// <summary>Escolhe entre um texto claro ou escuro por legibilidade — nunca fixo por tema,
+    /// sempre calculado a partir da cor de destaque real. Prefere texto claro por padrão em
+    /// vez de maximizar a razão de contraste WCAG entre as duas opções: essa maximização
+    /// escolhia texto escuro sempre que a luminância do fundo passasse de ~0.18 (o ponto onde
+    /// a fórmula intercala qual opção "vence"), um limiar bem abaixo do que qualquer pessoa
+    /// chamaria de "fundo claro" — na prática, isso dava texto preto sobre cores de destaque
+    /// nitidamente escuras (ex.: o azul predefinido, #3B82F6, luminância 0.235), difícil de
+    /// ler (Seção 71, feedback de usuário). Só troca para texto escuro quando o fundo já é
+    /// realmente claro (luminância > 0.5) — o que só acontece com matizes bem claras/pastel
+    /// escolhidas no seletor de cor personalizado, já que os seis tons predefinidos e a
+    /// maioria das cores personalizadas ficam abaixo desse limiar nos dois temas.</summary>
+    private static Color PickTextOnPrimary(Color background) =>
+        RelativeLuminance(background) > LightBackgroundLuminanceThreshold ? DarkText : LightText;
 
     private static double RelativeLuminance(Color c)
     {

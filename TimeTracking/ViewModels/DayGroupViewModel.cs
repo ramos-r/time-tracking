@@ -95,13 +95,14 @@ public partial class DayGroupViewModel : ObservableObject
     [RelayCommand]
     private void ToggleExpand()
     {
-        // Seção 68, item 7: com timer rodando em uma tarefa do grupo, o recolhimento manual
-        // é ignorado para não esconder acidentalmente a tarefa em andamento.
-        if (HasRunningTask)
-        {
-            return;
-        }
-
+        // Antes (Seção 68, item 7) o recolhimento manual era bloqueado enquanto havia timer
+        // rodando no grupo, para não "esconder" a tarefa em andamento por engano — mas isso é
+        // só cosmético: recolher não pausa nada, o total do dia no cabeçalho continua
+        // atualizando a cada segundo (OnTick em TimeTrackingViewModel não depende de
+        // IsExpanded). O bloqueio deixava "Hoje" preso aberto sempre que havia algo rodando —
+        // quase sempre, no uso diário — lido como o grupo "nunca fechar" (Seção 71, feedback
+        // de usuário). Auto-expandir ao iniciar uma tarefa (OnHasRunningTaskChanged) continua
+        // valendo; só o recolhimento manual deixou de ser bloqueado.
         IsExpanded = !IsExpanded;
     }
 }

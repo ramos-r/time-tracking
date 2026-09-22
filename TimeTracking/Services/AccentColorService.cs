@@ -19,14 +19,16 @@ public class AccentColorService : IAccentColorService
     private readonly AppSettingsStore _settingsStore;
     private ResourceDictionary? _publishedDictionary;
 
+    // Saturação reduzida a ~65% da original em todo o leque (mesmos matizes) — Seção 71,
+    // feedback de usuário: as cores predefinidas estavam muito saturadas/"neon" por padrão.
     public IReadOnlyList<string> PredefinedSwatches { get; } = new[]
     {
         IAccentColorService.DefaultAccentHex, // roxo/lilás (interface-ref.png)
-        "#3B82F6", // azul
-        "#14B8A6", // verde-azulado
-        "#F97316", // laranja
-        "#EC4899", // rosa
-        "#EF4444", // vermelho
+        "#6893D8", // azul
+        "#34A79A", // verde-azulado
+        "#D4834A", // laranja
+        "#D370A1", // rosa
+        "#D56E6E", // vermelho
     };
 
     public string CurrentAccentHex { get; private set; } = IAccentColorService.DefaultAccentHex;

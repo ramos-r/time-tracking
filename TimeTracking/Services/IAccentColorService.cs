@@ -2,8 +2,11 @@ namespace TimeTracking.Services;
 
 public interface IAccentColorService
 {
-    /// <summary>Padrão de fábrica: roxo/lilás da referência visual (interface-ref.png, Seção 31).</summary>
-    const string DefaultAccentHex = "#7129D3";
+    /// <summary>Padrão de fábrica: roxo/lilás da referência visual (interface-ref.png, Seção 31),
+    /// com a saturação reduzida (mesmo matiz, ~65% da saturação original) junto com o resto do
+    /// leque de swatches — Seção 71, feedback de usuário: as cores predefinidas estavam muito
+    /// saturadas/"neon" por padrão.</summary>
+    const string DefaultAccentHex = "#7E50BB";
 
     /// <summary>Leque de swatches predefinidos (Seção 69, item 1) — o primeiro é o padrão de fábrica.</summary>
     IReadOnlyList<string> PredefinedSwatches { get; }

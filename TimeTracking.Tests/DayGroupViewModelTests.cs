@@ -67,14 +67,17 @@ public class DayGroupViewModelTests
     }
 
     [Fact]
-    public void Manually_Collapsing_A_Group_With_A_Running_Task_Is_Ignored()
+    public void Manually_Collapsing_A_Group_With_A_Running_Task_Still_Collapses()
     {
+        // Recolher é só cosmético (não pausa nada, o total do dia continua atualizando no
+        // cabeçalho) — bloquear o recolhimento manual enquanto algo roda deixava "Hoje" preso
+        // aberto o tempo todo no uso diário, lido como bug (Seção 71, feedback de usuário).
         var task = CreateTaskItem(1, "Tarefa");
         var group = CreateGroup(isExpanded: true, task);
         group.HasRunningTask = true;
 
         group.ToggleExpandCommand.Execute(null);
 
-        Assert.True(group.IsExpanded); // Seção 68, item 7: não pode esconder a tarefa ativa
+        Assert.False(group.IsExpanded);
     }
 }

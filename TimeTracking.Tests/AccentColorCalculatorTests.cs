@@ -107,21 +107,27 @@ public class AccentColorCalculatorTests
         Assert.NotEqual(darkVariations.Primary, lightVariations.Primary);
     }
 
-    // Mesmas âncoras usadas internamente por AccentColorCalculator.PickTextOnPrimary (Seção 69:
-    // "nunca fixada em branco ou preto por padrão" — ancoradas nos tons mais claro/escuro da
-    // paleta do app em vez disso). Duplicadas aqui porque são `private` no calculador; o teste
-    // verifica a escolha ENTRE essas duas opções reais, não contra branco/preto puro.
+    // Mesmas âncoras usadas internamente por AccentColorCalculator.PickTextOnPrimary — ancoradas
+    // nos tons mais claro/escuro da paleta do app em vez de branco/preto puro. Duplicadas aqui
+    // porque são `private` no calculador.
     private static readonly Color LightTextAnchor = Color.FromRgb(0xF2, 0xEC, 0xE5);
     private static readonly Color DarkTextAnchor = Color.FromRgb(0x18, 0x16, 0x14);
+
+    // Mesmo limiar usado internamente por PickTextOnPrimary (Seção 69, ajuste — Seção 71,
+    // feedback de usuário: maximizar a razão de contraste WCAG entre as duas opções escolhia
+    // texto escuro para cores nitidamente escuras como o azul predefinido; o limiar de
+    // luminância evita isso, só pedindo texto escuro quando o fundo já é realmente claro).
+    private const double LightBackgroundLuminanceThreshold = 0.4;
 
     [Theory]
     [InlineData("#0A0A2A")] // azul muito escuro
     [InlineData("#FFF5D6")] // amarelo muito claro
     [InlineData("#7129D3")] // roxo médio (padrão de fábrica)
+    [InlineData("#3B82F6")] // azul predefinido (Seção 71, feedback de usuário)
     [InlineData("#FF0000")]
     [InlineData("#000000")]
     [InlineData("#FFFFFF")]
-    public void Derive_TextOnPrimary_AlwaysPicksTheHigherContrastOption(string hex)
+    public void Derive_TextOnPrimary_PicksDarkOnlyWhenBackgroundIsLightEnough(string hex)
     {
         AccentColorCalculator.TryParseHex(hex, out var baseColor);
 
@@ -129,9 +135,9 @@ public class AccentColorCalculatorTests
         {
             var variations = AccentColorCalculator.Derive(baseColor, isDark);
 
-            var contrastWithLight = ContrastRatio(variations.Primary, LightTextAnchor);
-            var contrastWithDark = ContrastRatio(variations.Primary, DarkTextAnchor);
-            var expected = contrastWithLight >= contrastWithDark ? LightTextAnchor : DarkTextAnchor;
+            var expected = RelativeLuminance(variations.Primary) > LightBackgroundLuminanceThreshold
+                ? DarkTextAnchor
+                : LightTextAnchor;
 
             Assert.Equal(expected, variations.TextOnPrimary);
         }
@@ -147,13 +153,6 @@ public class AccentColorCalculatorTests
         Assert.Equal(variations.Primary.G, variations.Subtle.G);
         Assert.Equal(variations.Primary.B, variations.Subtle.B);
         Assert.True(variations.Subtle.A < 255, "Subtle deveria ser translúcido.");
-    }
-
-    private static double ContrastRatio(Color a, Color b)
-    {
-        double la = RelativeLuminance(a) + 0.05;
-        double lb = RelativeLuminance(b) + 0.05;
-        return la > lb ? la / lb : lb / la;
     }
 
     private static double RelativeLuminance(Color c)

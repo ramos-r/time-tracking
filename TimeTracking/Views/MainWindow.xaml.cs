@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using TimeTracking.Services;
 using TimeTracking.ViewModels;
@@ -16,9 +18,23 @@ public partial class MainWindow : Window
     private static readonly BitmapFrame DefaultIcon = BitmapFrame.Create(new Uri("pack://application:,,,/Resources/Icons/AppIcon.ico"));
     private static readonly BitmapFrame WorkingIcon = BitmapFrame.Create(new Uri("pack://application:,,,/Resources/Icons/AppIconWorking.ico"));
 
-    private readonly ITimerService _timerService;
+    // DWMWA_USE_IMMERSIVE_DARK_MODE: atributo do DWM (Windows 10 20H1+) que pinta a barra de
+    // título nativa (ícone, nome do app, botões minimizar/maximizar/fechar) no esquema escuro
+    // do próprio Windows, em vez do branco padrão do SO — não dá para escolher uma cor exata
+    // (não é um recurso de tema do WPF), só ligar/desligar o modo escuro nativo da barra
+    // (Seção 71, feedback de usuário: a barra de título ficava sempre clara, destoando do
+    // resto do app no tema Dark). Em versões do Windows sem esse atributo, a chamada falha
+    // silenciosamente (retorno não-zero) e a barra permanece no padrão do SO — degradação
+    // aceitável, não uma falha visível para o usuário.
+    private const int DwmwaUseImmersiveDarkMode = 20;
 
-    public MainWindow(MainViewModel viewModel, ITimerService timerService)
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int valueSize);
+
+    private readonly ITimerService _timerService;
+    private readonly IThemeService _themeService;
+
+    public MainWindow(MainViewModel viewModel, ITimerService timerService, IThemeService themeService)
     {
         InitializeComponent();
         DataContext = viewModel;
@@ -29,6 +45,25 @@ public partial class MainWindow : Window
         // dispara exatamente quando Start/Pause muda a tarefa ativa (Seção 15).
         _timerService.ActiveTaskChanged += OnActiveTaskChanged;
         _ = RefreshIconAsync();
+
+        _themeService = themeService;
+        // Reaplica ao trocar de tema em tempo real (Settings) — SourceInitialized cobre a
+        // primeira aplicação, já que o HWND nativo só existe a partir desse ponto (não no
+        // construtor).
+        _themeService.EffectiveThemeChanged += _ => ApplyTitleBarTheme();
+        SourceInitialized += (_, _) => ApplyTitleBarTheme();
+    }
+
+    private void ApplyTitleBarTheme()
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var useDarkMode = _themeService.EffectiveTheme == AppTheme.Light ? 0 : 1;
+        DwmSetWindowAttribute(hwnd, DwmwaUseImmersiveDarkMode, ref useDarkMode, sizeof(int));
     }
 
     private async void OnActiveTaskChanged() => await RefreshIconAsync();
