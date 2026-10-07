@@ -17,6 +17,17 @@ Este é um projeto pessoal em desenvolvimento, guiado por uma especificação t�
 - Limpeza de histórico com confirmação.
 - Funciona 100% offline, sem backend, sem sincronização e sem telemetria.
 
+### Além do MVP
+
+- **Pomodoro** (modo de foco sobre o mesmo timer — não é um segundo timer):
+  - Ciclo foco → pausa curta → foco, com pausa longa a cada N focos; durações configuráveis (padrão 25/5/15/4), numa aba recolhível dentro da própria tela.
+  - Tarefa vinculada opcional: o tempo de foco vira sessão (`TimeEntry`) da tarefa e aparece no histórico e no total do dia.
+  - Ao fim de uma fase, o app toca um som do sistema e pisca o botão na barra de tarefas até a janela ser ativada, sem roubar o foco de outro programa.
+  - O fim do foco é sempre registrado no horário teórico: se o app foi fechado ou o PC suspenso, a sessão não "infla" com o tempo em que você não estava trabalhando.
+  - O ciclo sobrevive ao fechamento do app; um chip na barra superior mostra o Pomodoro em andamento nas outras telas.
+- Tarefas agrupadas por data (grupos retráteis, com o total do dia) e seleção múltipla para exclusão em lote.
+- Cor de destaque personalizável (cores prontas ou seletor livre), independente do tema claro/escuro.
+
 ## Stack tecnológica
 
 - **C#** / **.NET 8 (LTS)**
@@ -32,7 +43,7 @@ WPF (Views)
  ↓
 ViewModels (MVVM / estado da UI)
  ↓
-Services (regras de negócio: TimerService, TaskService, TagService, ThemeService)
+Services (regras de negócio: TimerService, TaskService, TagService, ThemeService, PomodoroService)
  ↓
 Repositories / EF Core
  ↓
@@ -49,11 +60,14 @@ TimeTracking/
 ├── Models/            → Task, Tag, TimeEntry
 ├── Data/               → AppDbContext, Migrations
 ├── Repositories/       → acesso a dados (interfaces + implementações)
-├── Services/           → TimerService, TaskService, TagService, NavigationService, ThemeService
+├── Services/           → TimerService, TaskService, TagService, NavigationService, ThemeService,
+│                         AccentColorService, PomodoroService, PhaseEndNotifier, AppSettingsStore
 ├── ViewModels/         → estado de UI e comandos
-├── Views/              → telas e componentes (Sidebar, TaskCard, TaskEditorPanel, TagChip)
+├── Views/              → telas e componentes (Sidebar, TaskCard, DayGroupSection, ConfirmDialog, NumberStepper, TagChip...)
 ├── Resources/          → Themes (Dark/Light), Styles, Icons
-└── Helpers/
+└── Helpers/            → caminhos de dados, AppLog, avisos nativos do Windows
+
+TimeTracking.Tests/     → testes automatizados (xUnit)
 ```
 
 ## Como rodar localmente
@@ -70,22 +84,31 @@ dotnet run --project TimeTracking
 
 O banco é criado automaticamente em `%LocalAppData%\TimeTracking\timetracking.db` na primeira execução.
 
+### Testes
+
+```bash
+dotnet test TimeTracking.Tests
+```
+
+Os testes usam SQLite em memória (não o provider `InMemory` do EF Core, que não valida integridade relacional) e um relógio controlável — nenhum teste espera tempo real.
+
 ## Status de desenvolvimento
 
 O projeto é construído em fases independentes — uma por vez, cada uma validada antes de avançar para a próxima (ver `PROJECT_SPEC.md`, Seção 48).
 
 - [x] Fase 0 — Análise e planejamento
 - [x] Fase 1 — Criação do projeto
-- [ ] Fase 2 — Banco de dados _(em andamento)_
-- [ ] Fase 3 — Shell e navegação
-- [ ] Fase 4 — CRUD de tarefas
-- [ ] Fase 5 — Timer
-- [ ] Fase 6 — Painel de edição
-- [ ] Fase 7 — Tags
-- [ ] Fase 8 — Settings e temas
-- [ ] Fase 9 — Polish de UI/UX
-- [ ] Fase 10 — Testes e estabilização
-- [ ] Fase 11 — Build e empacotamento
+- [x] Fase 2 — Banco de dados
+- [x] Fase 3 — Shell e navegação
+- [x] Fase 4 — CRUD de tarefas
+- [x] Fase 5 — Timer
+- [x] Fase 6 — Painel de edição
+- [x] Fase 7 — Tags
+- [x] Fase 8 — Settings e temas
+- [x] Fase 9 — Polish de UI/UX
+- [ ] Fase 10 — Testes e estabilização _(suíte de testes existe e passa; fase ainda não formalmente encerrada)_
+- [ ] Fase 11 — Build e empacotamento _(ainda não formalizada)_
+- [x] Fase 12 — Pomodoro (v1.5): análise, serviço e testes, tela e integração, aviso de fim de fase
 
 ## Especificação completa
 
@@ -94,3 +117,5 @@ Todo o detalhamento de requisitos, modelo de dados, regras de negócio, design s
 ## Dados e privacidade
 
 Este aplicativo não envia dados para nenhum servidor, não possui telemetria e não requer conexão com a internet. Todo o histórico de tarefas e tempo registrado permanece apenas na máquina onde o aplicativo é executado.
+
+Tudo fica em `%LocalAppData%\TimeTracking\`: o banco (`timetracking.db`), as preferências e o estado do Pomodoro (`settings.json`) e um log de falhas (`app.log`). O log guarda só ids e mensagens técnicas — nunca nomes ou descrições de tarefas — e recomeça quando passa de 1 MB.
