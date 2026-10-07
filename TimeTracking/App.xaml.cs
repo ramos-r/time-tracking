@@ -36,6 +36,9 @@ public partial class App : Application
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<ITimerService, TimerService>();
         services.AddSingleton<AppSettingsStore>();
+        services.AddSingleton<IPomodoroService, PomodoroService>();
+        services.AddSingleton<INativeAlerts, WindowsAlerts>();
+        services.AddSingleton<PhaseEndNotifier>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddSingleton<IAccentColorService, AccentColorService>();
 
@@ -59,7 +62,10 @@ public partial class App : Application
         services.AddSingleton<MainWindow>();
     }
 
-    protected override void OnStartup(StartupEventArgs e)
+    // async void é o formato exigido de um override de evento; o try/catch evita que uma falha
+    // na recuperação do Pomodoro derrube a abertura do app (v1.5.1, D6) — ela só é registrada
+    // em log e o app abre com o ciclo no estado em que estiver.
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
@@ -74,6 +80,28 @@ public partial class App : Application
         // A cor de destaque (Seção 69) depende do tema efetivo já estar aplicado — precisa
         // rodar depois do ThemeService.Initialize(), também antes de qualquer janela abrir.
         _serviceProvider.GetRequiredService<IAccentColorService>().Initialize();
+
+        // O Pomodoro é criado já no startup (singleton resolvido aqui), e não na primeira
+        // navegação, para reagir ao timer mesmo com o usuário em outra tela (Seção 70). A
+        // recuperação roda depois da migração, para encontrar o estado real das sessões
+        // abertas (Seção 16), e é aguardada sem bloquear a thread de UI.
+        try
+        {
+            await _serviceProvider.GetRequiredService<IPomodoroService>().RecoverOnStartupAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Falha na recuperação do Pomodoro ao iniciar.", ex);
+        }
+
+        // O PomodoroViewModel hospeda o tick de 1 segundo: resolvê-lo aqui (e não na primeira
+        // navegação para a tela) faz o fim da fase ser detectado com o usuário em qualquer tela.
+        _serviceProvider.GetRequiredService<PomodoroViewModel>();
+
+        // O aviso de fim de fase (som + barra de tarefas) só existe enquanto estiver assinado ao
+        // evento do serviço — resolvido aqui, depois da recuperação (que não avisa), para valer
+        // desde o primeiro tick.
+        _serviceProvider.GetRequiredService<PhaseEndNotifier>();
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         mainWindow.Show();

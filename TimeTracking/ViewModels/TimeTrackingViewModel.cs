@@ -96,10 +96,51 @@ public partial class TimeTrackingViewModel : ObservableObject
         // até o usuário reiniciar o app ou navegar para fora desta tela e voltar.
         _taskService.HistoryCleared += OnHistoryCleared;
 
+        // O Pomodoro abre e fecha sessões pelo TimerService (Seção 70) sem passar por esta
+        // tela — sem isto, a lista (snapshot AsNoTracking, Seção 65) e o total do dia ficariam
+        // desatualizados até o usuário reiniciar ou criar outra tarefa.
+        _timerService.TimerChanged += OnTimerChanged;
+
         _ = LoadTasksAsync();
     }
 
     private async void OnHistoryCleared() => await LoadTasksAsync();
+
+    private bool _isReloadingFromTimer;
+    private bool _reloadFromTimerAgain;
+
+    /// <summary>Recarrega a lista quando o Pomodoro muda o timer. Ações do próprio usuário
+    /// (origin User) já recarregam em StartAndRefreshAsync/StopAsync — reagir a elas também
+    /// recarregaria duas vezes. Uma troca de tarefa gera dois eventos seguidos; o segundo
+    /// só agenda mais uma passada, em vez de disputar com a primeira.</summary>
+    private async void OnTimerChanged(TimerChange change)
+    {
+        if (change.Origin != TimerOrigin.Pomodoro)
+        {
+            return;
+        }
+
+        if (_isReloadingFromTimer)
+        {
+            _reloadFromTimerAgain = true;
+            return;
+        }
+
+        _isReloadingFromTimer = true;
+        try
+        {
+            do
+            {
+                _reloadFromTimerAgain = false;
+                await LoadTasksAsync();
+            }
+            while (_reloadFromTimerAgain);
+        }
+        finally
+        {
+            _isReloadingFromTimer = false;
+        }
+    }
 
     private void OnTick()
     {

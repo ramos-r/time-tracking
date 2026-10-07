@@ -16,14 +16,23 @@ public interface ITimerService
     /// <summary>Inicia o timer da tarefa. Se outra tarefa estiver em execução, ela é
     /// pausada automaticamente (a confirmação da Seção 15 é responsabilidade da UI/ViewModel,
     /// que deve perguntar antes de chamar este método quando houver conflito).</summary>
-    Task StartAsync(int taskId);
+    /// <exception cref="TimerConflictException">O banco rejeitou a abertura pelo índice único
+    /// da Seção 9 (início concorrente).</exception>
+    Task StartAsync(int taskId, TimerOrigin origin = TimerOrigin.User);
 
     /// <summary>Encerra a sessão aberta da tarefa (Seção 12).</summary>
-    Task PauseAsync(int taskId);
+    Task PauseAsync(int taskId, TimerOrigin origin = TimerOrigin.User);
 
     /// <summary>Mecanicamente idêntico a Pause (Seção 14, item 15 da nota de revisão) —
     /// mantido como método separado por clareza semântica de UX.</summary>
-    Task StopAsync(int taskId);
+    Task StopAsync(int taskId, TimerOrigin origin = TimerOrigin.User);
+
+    /// <summary>Encerra a sessão aberta da tarefa em um horário específico, em vez de "agora"
+    /// (Seção 34, v1.5.1) — base da regra crítica do Pomodoro (Seção 70): o foco termina no fim
+    /// teórico, nunca em UtcNow. Não faz nada se a tarefa não tem sessão aberta.</summary>
+    /// <exception cref="ArgumentException">endedAtUtc anterior ao início da sessão ou posterior
+    /// a "agora".</exception>
+    Task StopAtAsync(int taskId, DateTime endedAtUtc, TimerOrigin origin = TimerOrigin.User);
 
     /// <summary>Retorna as TimeEntry de uma tarefa, ordenadas por início — usadas pelo
     /// painel de edição (Seção 17) para decidir entre edição direta ou modo agregado.</summary>
@@ -40,8 +49,9 @@ public interface ITimerService
     Task AddManualEntryAsync(int taskId, DateTime startedAtUtc, DateTime endedAtUtc);
 
     /// <summary>Disparado sempre que uma sessão é aberta ou encerrada, ou seja, quando a
-    /// existência de uma tarefa ativa (Seção 15) pode ter mudado. Usado pela MainWindow para
-    /// trocar o ícone da barra de tarefas (Seção 71, feedback de usuário) sem precisar de
-    /// polling.</summary>
-    event Action? ActiveTaskChanged;
+    /// existência de uma tarefa ativa (Seção 15) pode ter mudado, informando o tipo, a tarefa e
+    /// a origem. Substitui o antigo ActiveTaskChanged (v1.5.1). Consumidores: a MainWindow, para
+    /// trocar o ícone da barra de tarefas (Seção 71) sem polling, e o PomodoroService (Seção 70).
+    /// Uma troca de tarefa dispara dois eventos: Ended da anterior e Started da nova.</summary>
+    event Action<TimerChange>? TimerChanged;
 }

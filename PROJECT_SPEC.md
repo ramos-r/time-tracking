@@ -1,13 +1,18 @@
 # TIME TRACKING APP
 ## Especificação Técnica e Plano de Desenvolvimento — MVP
 
-**Versão:** 1.4
+**Versão:** 1.5.4
 **Plataforma:** Windows Desktop
 **Tipo:** Aplicação local/offline para controle de tempo de tarefas
 **Banco:** SQLite local
 **Desenvolvimento assistido por Claude Code**
 
 **Changelog:**
+- v1.5.4 (07/10/2026): Pomodoro (Seção 70) encerrado — Definition of Done conferida item a item e marcada; sem mudanças de comportamento.
+- v1.5.3 (07/10/2026): Fase 12C — aviso de fim de fase do Pomodoro (som do sistema + botão da barra de tarefas piscando até a janela ser ativada), detalhado na Seção 70.
+- v1.5.2 (07/10/2026): registro das decisões aprovadas ao fim da Fase 12A — o arquivo da especificação passa a se chamar `PROJECT_SPEC.md` **de forma fixa** (a versão fica só neste cabeçalho e no changelog); `PomodoroState` ganha o campo `PausedPhase` (qual pausa foi pausada); `CycleNumber` aprovado como implementado; `AppLog` limitado a 1 MB (recomeça acima disso) e restrito a ids e mensagens técnicas, nunca nomes/descrições (Seção 46); pacotes do EF Core com versão exata, igual no app e nos testes; indicador do Pomodoro em andamento (D9) aprovado como chip na barra superior; detalhes da Fase 12B na Seção 70.
+- v1.5.1 (07/10/2026): registro das decisões da Fase 12.0 (relatório aprovado) nas Seções 34, 47 e 70 — relógio continua sendo o `IClock` existente (não `TimeProvider`); `TimerService` ganha `StopAtAsync`, evento `TimerChanged` com tipo/tarefa/origem e parâmetro `origin` opcional (substitui `ActiveTaskChanged`); novo evento `ITaskService.TaskDeleted` (corrige também o ícone da barra de tarefas preso após excluir tarefa em execução); gravação atômica do `settings.json` e leitura validada do estado do Pomodoro; regras de exibição do ciclo, limite do tempo restante e tratamento do índice único (D10); serialização por `SemaphoreSlim`, recuperação assíncrona no startup e hospedagem do tick no `PomodoroViewModel` (D4–D6); indicador em outras telas (D9) adiado para a 12B. Nenhuma outra seção foi alterada.
+- v1.5 (07/10/2026): adicionada a Seção 70 — Pomodoro (modo de foco sobre o `TimerService`), com plano de fases 12.0, 12A, 12B e 12C. Atualiza Seções 32, 33, 34, 35, 36, 38, 47, 62 e 66. Ver item 18 da nota de revisão.
 - v1.4 (03/09/2026): adicionada a Seção 69 — Cor de destaque personalizável (swatches + color picker). Atualiza Seções 26, 28, 29, 30, 57 e 61. Ver item 17 da nota de revisão pré-desenvolvimento.
 - v1.3 (01/09/2026): adicionada a Seção 68 — Agrupamento retrátil de tarefas por data, com total do dia. Ver nota na Seção 21.
 
@@ -50,6 +55,8 @@ Esta nota documenta decisões tomadas para resolver ambiguidades identificadas n
 16. **Estratégia de ícones (Seção 30)**: usar a fonte nativa do Windows (Segoe Fluent Icons/MDL2) no MVP, sem dependência externa; ícones vetoriais próprios ficam para a Fase 9 (Polish), se necessário.
 
 17. **Cor de destaque personalizável (Seção 69)**: a ideia inicial de 4-5 temas de acento predefinidos foi substituída por um modelo híbrido — um leque de swatches predefinidos para seleção rápida, mais um seletor de cor livre (matiz/saturação) para personalização avançada. O tema Dark/Light (Seções 28-29) continua controlando apenas background, surface, bordas e texto; a cor de destaque passa a ser ortogonal ao tema, escolhida independentemente pelo usuário.
+
+18. **Pomodoro (Seção 70, v1.5 — pós-MVP)**: o Pomodoro sai do backlog e passa a ser implementado como um **modo de foco sobre o `TimerService` existente**, e não como um segundo timer. Decisões: vínculo com tarefa opcional; nenhuma tabela nova (o tempo de foco vira `TimeEntry` normal); estado do ciclo salvo junto das preferências; fim de fase encerra a `TimeEntry` no horário teórico do fim (nunca em `UtcNow`); a próxima fase só começa com ação do usuário; aviso de fim de fase mínimo (som do sistema + piscar na barra de tarefas + estado na tela), sem dependência externa; o `TimerService` continua sendo a única fonte de verdade.
 
 ---
 
@@ -1189,6 +1196,25 @@ Essa estrutura pode ser adaptada se o projeto demonstrar necessidade real.
 
 Não criar abstrações vazias apenas para preencher pastas.
 
+**Adições (v1.5 — Pomodoro, Seção 70):**
+
+```text
+Models/
+└── PomodoroState.cs          (estado do ciclo; NÃO é entidade do EF Core)
+
+Services/
+├── PomodoroService.cs
+└── PhaseEndNotifier.cs       (som + piscar na barra de tarefas — Fase 12C)
+
+ViewModels/
+└── PomodoroViewModel.cs
+
+Views/
+└── PomodoroView.xaml         (substitui o placeholder "Em breve")
+```
+
+Os nomes são sugestão; o Claude Code deve seguir as convenções já adotadas no código existente.
+
 ---
 
 # 33. RESPONSABILIDADES
@@ -1219,6 +1245,7 @@ TimerService
 TaskService
 TagService
 ThemeService
+PomodoroService   (v1.5 — Seção 70)
 ```
 
 ## Repositories
@@ -1248,6 +1275,17 @@ Responsabilidades:
 
 A ViewModel não deve implementar diretamente a lógica de cálculo de tempo.
 
+**Adições (v1.5 — exigidas pelo Pomodoro, Seção 70; detalhadas na v1.5.1 após a Fase 12.0):**
+
+- **encerrar a sessão aberta em um horário específico** — `StopAtAsync(taskId, endedAtUtc)`, além do encerramento com "agora". Validações: `endedAtUtc >= StartedAt` e `endedAtUtc <= agora` (`ArgumentException` caso contrário);
+- **notificar mudanças de estado** por um evento `TimerChanged` (`Action<TimerChange>`) que informa o **tipo** (`Started` ou `Ended`), o **`TaskId`** afetado e a **origem** (`User` ou `Pomodoro`). Numa troca de tarefa são disparados **dois eventos**: `Ended` da tarefa anterior e depois `Started` da nova. A origem é um **parâmetro opcional** (`origin`, padrão `User`) de `StartAsync`, `PauseAsync`, `StopAsync` e `StopAtAsync` — não uma flag interna do `PomodoroService`, que falharia com reentrância assíncrona. O evento **substitui** o antigo `ActiveTaskChanged` (consumido hoje apenas pelo ícone da barra de tarefas);
+- **continuar obtendo o horário atual pelo `IClock` já existente** (injetado por DI e controlável nos testes por `TestClock`), em vez de `TimeProvider` — decisão D1 da Fase 12.0: o caminho do timer já é totalmente injetável, e migrar para `TimeProvider` mexeria em código aprovado sem ganho prático;
+- **traduzir a violação do índice único (Seção 9)** ao abrir uma sessão em um erro de domínio próprio, mantendo o detalhe técnico no log (Seção 46); os chamadores exibem mensagem amigável (Seção 39).
+
+O `TimerService` continua sendo a **única fonte de verdade** sobre qual sessão está aberta. Nenhum outro serviço grava `TimeEntry` diretamente.
+
+**`ITaskService` (v1.5.1):** passa a expor o evento `TaskDeleted(int taskId)`, disparado após cada exclusão individual ou em lote (simétrico ao `HistoryCleared`). Consumidores: `PomodoroService` (remover o vínculo) e o ícone da barra de tarefas, que também reavalia o estado ao ouvir `TaskDeleted` e `HistoryCleared` — corrige o ícone ficar preso em "trabalhando" quando a tarefa em execução é excluída (a exclusão encerra a sessão por cascade, sem passar pelo `TimerService`).
+
 ---
 
 # 35. NAVEGAÇÃO
@@ -1265,34 +1303,20 @@ Pomodoro
 Settings
 ```
 
-Pomodoro deverá existir na navegação somente se isso fizer parte do escopo visual definido, mas sua funcionalidade não deverá ser implementada no MVP.
-
-Pode ser apresentado como:
-
-```text
-Pomodoro
-Em breve
-```
-
-ou permanecer temporariamente indisponível.
+**Atualização (v1.5):** a rota Pomodoro deixa de ser placeholder ("Em breve") e passa a abrir a tela Pomodoro definida na Seção 70.
 
 ---
 
-# 36. POMODORO — FUTURO
+# 36. POMODORO
 
-Pomodoro NÃO faz parte do núcleo do MVP.
+**Atualização (v1.5):** o Pomodoro deixou de ser item futuro e está especificado na **Seção 70**.
 
-Preparar apenas a arquitetura de navegação para sua futura inclusão.
+Continuam fora do escopo (backlog, Seção 62):
 
-Não implementar:
-
-- timer Pomodoro;
-- ciclos;
-- pausas;
-- notificações;
-- estatísticas de Pomodoro.
-
-Esses itens pertencem a uma fase futura.
+- notificações toast do Windows;
+- início automático da próxima fase;
+- estatísticas/histórico de pomodoros completados;
+- pular fase.
 
 ---
 
@@ -1353,6 +1377,8 @@ Não implementar neste momento:
 - integrações externas.
 
 Essas funcionalidades podem ser registradas como backlog futuro.
+
+**Nota (v1.5):** o aviso mínimo de fim de fase do Pomodoro (som do sistema + piscar na barra de tarefas + estado na tela, Seção 70) é permitido e não conta como "notificação complexa". Notificações toast continuam fora.
 
 ---
 
@@ -1505,6 +1531,8 @@ Registrar informações úteis para diagnóstico, como:
 
 Não registrar dados desnecessários ou conteúdo sensível.
 
+**Implementação (v1.5.2):** `AppLog`, um helper mínimo sem dependência externa, grava em `app.log` ao lado do `settings.json`. Regras: o arquivo **recomeça** quando passa de 1 MB (sem rotação nem backups); o log leva apenas **ids e mensagens técnicas** — nunca nomes ou descrições de tarefas ou tags; registrar uma falha nunca pode lançar outra.
+
 ---
 
 # 47. TESTES
@@ -1556,9 +1584,22 @@ Excluir
 Associar
 ```
 
+### Pomodoro (v1.5)
+
+Lista completa na Seção 70, "Testes". Os casos críticos são o ciclo completo com durações exatas e a reabertura após o fim da fase (encerramento no horário teórico, nunca em `UtcNow`).
+
+Cobertura adicional (v1.5.1), além da lista da Seção 70:
+
+- `TimerService`: `StopAtAsync` (validações e encerramento no horário informado), evento `TimerChanged` (tipo, tarefa e origem; dois eventos na troca de tarefa) e tradução da violação do índice único;
+- `TaskService`: evento `TaskDeleted`;
+- `AppSettingsStore`: gravação atômica (sem arquivo temporário residual), leitura do estado do Pomodoro com `Phase` inválida voltando para `Idle` e valores fora dos limites sendo corrigidos;
+- `PomodoroService`: limite do tempo restante em `[0, duração]` com o relógio andando para trás, numeração do ciclo, fallback `max(fim teórico, StartedAt)` e serialização de chamadas concorrentes (fim de fase detectado duas vezes no mesmo instante conta uma vez só).
+
 ### Observação técnica
 
 Testes de persistência devem usar SQLite com `Data Source=:memory:` (conexão aberta mantida viva durante o teste), **não** o provider `InMemory` do EF Core — esse provider não valida integridade relacional (chaves estrangeiras, constraints), o que mascararia bugs reais de persistência.
+
+Testes que dependem de tempo (timer e Pomodoro) devem usar o `IClock` controlável (`TestClock`), nunca `Thread.Sleep` ou espera real.
 
 ---
 
@@ -2011,6 +2052,8 @@ O MVP só será considerado concluído quando:
 - [ ] testes principais foram executados;
 - [ ] aplicação não apresenta erros críticos.
 
+A Definition of Done do Pomodoro (pós-MVP) está na Seção 70.
+
 ---
 
 # 62. BACKLOG FUTURO
@@ -2032,10 +2075,18 @@ Podem ser consideradas posteriormente:
 
 ## V1.2
 
-- Pomodoro;
-- notificações;
+- notificações (incluindo toast do Windows para o Pomodoro);
 - exportação;
 - relatórios.
+
+O Pomodoro saiu desta lista na v1.5 — ver Seção 70.
+
+## Pomodoro — extensões futuras
+
+- início automático da próxima fase (opção);
+- pular fase;
+- estatísticas de pomodoros completados (junto do Dashboard);
+- notificação toast do Windows.
 
 ## V2+
 
@@ -2248,6 +2299,14 @@ O resultado esperado do MVP é:
                          └──────────────┘
 ```
 
+**Nota (v1.5):** o `PomodoroService` (Seção 70) fica **acima** do `TimerService`, não ao lado: ele não acessa repositórios nem o banco, apenas chama o `TimerService` e observa suas mudanças.
+
+```text
+PomodoroViewModel → PomodoroService → TimerService → Repositories → SQLite
+                         │
+                         └→ preferências (estado do ciclo)
+```
+
 O núcleo do produto deverá permanecer:
 
 ```text
@@ -2390,6 +2449,295 @@ Esta feature pertence à **Fase 8 — Settings e Temas** (Seção 57), junto da 
 - Reabrir a aplicação → última cor de destaque escolhida é restaurada.
 - Trocar o tema (Dark ↔ Light) mantendo a mesma cor de destaque → variações (`Hover`, `Pressed`, `Subtle`, `Text On Primary`) recalculadas corretamente para o novo tema, sem perda de contraste.
 - Escolher uma cor de destaque de luminosidade extrema (muito clara ou muito escura) → `Text On Primary` ainda resulta em texto legível sobre o botão primário.
+
+---
+
+# 70. FEATURE (v1.5) — POMODORO
+
+## Contexto
+
+O Pomodoro estava no backlog (Seções 36 e 62) e passa a ser implementado após o MVP aprovado. Esta seção é a fonte de verdade para o Pomodoro; em caso de conflito com textos anteriores, prevalece esta seção.
+
+**Princípio central:** o Pomodoro **não é um segundo timer**. Ele é um modo de foco que organiza ciclos de tempo e, quando há uma tarefa vinculada, usa o `TimerService` existente para abrir e fechar `TimeEntry`. Assim:
+
+- a regra "apenas um timer rodando" (Seção 15) continua valendo sem exceções;
+- o tempo de foco aparece no histórico, no painel de edição e no agrupamento por dia (Seção 68) sem código extra;
+- o `TimerService` continua sendo a única fonte de verdade sobre sessões abertas.
+
+## Conceitos
+
+| Termo | Significado |
+|---|---|
+| Fase | Um período do ciclo: **Foco**, **Pausa curta** ou **Pausa longa** |
+| Ciclo | Um foco concluído (o contador sobe ao fim de cada foco) |
+| Tarefa vinculada | Tarefa opcional escolhida para receber o tempo de foco |
+
+## Configurações
+
+O usuário pode ajustar quatro valores, **na própria tela Pomodoro** (não em Settings, para manter Settings pequeno — Seção 26):
+
+| Configuração | O que é | Padrão | Limites |
+|---|---|---|---|
+| Duração do foco | Tempo de trabalho de cada pomodoro (o "tempo rolando") | 25 min | 1–120 min |
+| Pausa curta | Descanso após cada foco | 5 min | 1–60 min |
+| Pausa longa | Descanso maior após uma sequência de focos | 15 min | 1–60 min |
+| Focos até a pausa longa | Quantos focos concluídos até a pausa longa | 4 | 2–10 |
+
+Regras:
+
+- os valores são persistidos junto das preferências (mesmo mecanismo do tema/cor de destaque);
+- alterar um valor **não afeta a fase em andamento**, apenas as próximas fases;
+- os campos de configuração ficam desabilitados enquanto uma fase está rodando, para evitar confusão;
+- botão "Restaurar padrão" (25/5/15/4).
+
+## Máquina de estados
+
+```text
+            Iniciar
+ Idle ─────────────────► Foco ──(fim)──► AguardandoPausa ──(Iniciar pausa)──► PausaCurta / PausaLonga
+  ▲                       │ ▲                                                        │
+  │                Pausar │ │ Retomar                                                (fim)
+  │                       ▼ │                                                        ▼
+  │                  FocoPausado                                             AguardandoFoco ──(Iniciar foco)──► Foco
+  │
+  └────────── Parar ciclo (a partir de qualquer estado)
+```
+
+- A pausa longa entra quando `focosConcluídos % focosAtéPausaLonga == 0`; caso contrário, pausa curta.
+- As pausas também podem ser pausadas/retomadas (`PausaPausada`), sem efeito em `TimeEntry`.
+- Os estados **Aguardando** existem porque a próxima fase **só começa com ação do usuário** — não há início automático no escopo atual.
+- **Parar ciclo** encerra a `TimeEntry` aberta pelo Pomodoro (se houver) com "agora", zera o contador de focos e volta para `Idle`.
+
+## Comportamento com tarefa vinculada
+
+- A tarefa vinculada é **opcional**. Sem tarefa, o ciclo roda normalmente e **não grava nenhuma `TimeEntry`**.
+- A tarefa só pode ser escolhida ou trocada quando **não há foco rodando** (estados `Idle`, `Aguardando*`, pausas ou `FocoPausado`).
+- **Início do foco:** o `PomodoroService` pede ao `TimerService` para iniciar a tarefa vinculada.
+  - se outra tarefa estiver rodando, aparece o mesmo diálogo da Seção 15; se o usuário cancelar, o foco não começa. O diálogo é mostrado pelo **`PomodoroViewModel`** (componente `ConfirmDialog` existente), nunca pelo serviço: o `PomodoroService` devolve um resultado (iniciado, precisa de confirmação com o nome da tarefa ativa, ou falha) e aceita uma segunda chamada com `replaceActive: true` depois da confirmação (decisão D3). A mesma regra vale para retomar um foco pausado e para iniciar o foco seguinte;
+  - se a própria tarefa vinculada já estiver rodando (iniciada pela tela Time Tracking), a sessão aberta é **reaproveitada**; a contagem do foco começa no clique. Como a `TimeEntry` mantém o início original, ela pode durar mais que o foco configurado (ex.: Play 10 min antes do foco de 25 min → 35 min). Isso é o comportamento definido: não fechar e reabrir a sessão no clique;
+  - se o banco rejeitar a abertura da sessão pelo índice único da Seção 9 (início concorrente), o foco não começa e o usuário vê uma mensagem amigável (Seção 39); o detalhe técnico vai para o log (Seção 46).
+- **Fim do foco:** a `TimeEntry` é encerrada no **horário teórico do fim** (ver regra crítica abaixo).
+- **Pausas:** não há `TimeEntry` aberta pelo Pomodoro durante as pausas.
+- **Pausar o foco:** encerra a `TimeEntry` com "agora" e guarda o tempo restante do foco. **Retomar** cria uma nova `TimeEntry` (mesmo padrão da Seção 13).
+
+## Regra crítica — encerramento no horário teórico
+
+> Sempre que o fim de uma fase de foco for detectado — com o app aberto, após o PC sair de suspensão, ou na reabertura do app — a `TimeEntry` é encerrada em `InícioDaFase + TempoRestanteNoInício`, **nunca** em `UtcNow`.
+
+Exemplo:
+
+```text
+14:00  foco de 25 min iniciado (TimeEntry aberta)
+14:10  app fechado
+16:00  app reaberto
+
+Correto:   TimeEntry 14:00 → 14:25   (25 min)
+Errado:    TimeEntry 14:00 → 16:00   (2h — tempo que não foi trabalhado)
+```
+
+Se a `TimeEntry` aberta tiver o início editado (Seção 17) para depois do fim teórico, o encerramento usa `max(fim teórico, StartedAt)`, respeitando a validação do `StopAtAsync`.
+
+Ao reabrir após o fim de um foco, o Pomodoro vai para `AguardandoPausa`, sem tocar som (o aviso de fim de fase só é emitido quando a detecção acontece com o app aberto). Ao reabrir após o fim de uma pausa, vai para `AguardandoFoco`.
+
+Ao reabrir **antes** do fim da fase, o Pomodoro retoma a fase com o tempo restante correto, calculado por timestamps (Seção 16).
+
+## Interação com a tela Time Tracking (ações externas)
+
+O `PomodoroService` observa as notificações de mudança do `TimerService` (Seção 34) e reage apenas às mudanças que **não** foram originadas por ele mesmo:
+
+| Situação durante um foco com tarefa vinculada | Reação do Pomodoro |
+|---|---|
+| Usuário pausa/para a tarefa vinculada na tela Time Tracking | Vai para `FocoPausado`, preservando o tempo restante |
+| Usuário inicia outra tarefa (diálogo da Seção 15 confirmado) | Vai para `FocoPausado`, preservando o tempo restante |
+| Usuário dá Play na tarefa vinculada pela tela Time Tracking enquanto o Pomodoro está em `FocoPausado` | O Pomodoro **não** retoma sozinho; ao clicar Retomar no Pomodoro, a sessão aberta é reaproveitada |
+| A tarefa vinculada é excluída (Seção 23) ou o histórico é limpo (Seção 27) | O vínculo é removido (o `PomodoroService` ouve `ITaskService.TaskDeleted` e `HistoryCleared`); o ciclo continua sem gravar `TimeEntry` |
+| A tarefa vinculada é editada no painel (Seção 17) | Nenhuma reação; o Pomodoro continua normalmente |
+
+Observações:
+
+- o botão "Iniciar timer" da tela Time Tracking (início rápido) começa uma tarefa nova **sem** o diálogo da Seção 15, por decisão anterior; para o Pomodoro o efeito é o mesmo da segunda linha (`FocoPausado`);
+- ações originadas pelo próprio Pomodoro (`origin = Pomodoro`) são ignoradas pelo `PomodoroService`.
+
+Durante as pausas (sem `TimeEntry` do Pomodoro), o usuário pode usar a tela Time Tracking livremente; o Pomodoro não reage.
+
+## Persistência do estado do ciclo
+
+Nenhuma tabela nova. O estado é salvo junto das preferências (mesmo mecanismo do tema/cor de destaque) em um objeto `PomodoroState`:
+
+```text
+Phase                    (Idle, Foco, FocoPausado, AguardandoPausa, PausaCurta, PausaLonga, PausaPausada, AguardandoFoco)
+PhaseStartedAtUtc        (início do trecho atual da fase)
+RemainingAtPhaseStart    (tempo restante quando o trecho atual começou)
+RemainingWhenPaused      (preenchido apenas nos estados pausados)
+CompletedFocusCount
+LinkedTaskId             (opcional)
+```
+
+- O estado é gravado apenas em **eventos** (iniciar, pausar, retomar, fim de fase, parar, trocar tarefa), nunca a cada segundo (Seção 43).
+- O tempo restante exibido é sempre calculado: `RemainingAtPhaseStart - (agora - PhaseStartedAtUtc)`, **limitado ao intervalo `[0, duração]`** (o limite superior cobre o relógio do Windows ajustado para trás).
+- Todos os horários em UTC; a exibição usa o horário local.
+- O contador de focos concluídos existe apenas para decidir entre pausa curta e longa — **não** é estatística. Estatísticas ficam no backlog (Seção 62). Ele **só zera em "Parar ciclo"** (não zera depois da pausa longa; a decisão pausa curta/longa usa o resto da divisão).
+- **Local do modelo:** seguindo a convenção do código (o `Models/` só tem entidades do EF Core), o `PomodoroState` e as configurações ficam em `Services/`, junto do `AppSettingsData`.
+- **Gravação atômica (D7):** o `AppSettingsStore` grava em um arquivo temporário e substitui o `settings.json` de uma vez, para que uma queda no meio da gravação não zere tema, cor de destaque e estado do ciclo.
+- **Leitura validada (D7):** `Phase` é persistida como **texto** e lida com `Enum.TryParse` (valor desconhecido vira `Idle`), em vez de um conversor que lançaria `JsonException` e faria o `Load()` descartar o arquivo inteiro. Configurações e tempos lidos são corrigidos para os limites da tabela de configurações.
+- Falha de `IOException` ao gravar continua **não** derrubando o app (risco residual aceito), mas é **registrada em log** (Seção 46).
+
+## Detecção do fim de fase
+
+- O tick visual de 1 segundo (o mesmo padrão do timer da Seção 43) recalcula o tempo restante a partir dos timestamps e detecta quando ele chega a zero.
+- Como o cálculo é por timestamps, o retorno de suspensão do PC é tratado naturalmente: no primeiro tick após acordar, o fim é detectado e a regra crítica é aplicada.
+- O horário atual vem do `IClock` injetado (Seção 34).
+- **Quem hospeda o tick (D4):** o `PomodoroViewModel` (singleton), resolvido de forma **eager** no `App.OnStartup` — depois do `RecoverOnStartup()` e antes de exibir a janela —, com o `DispatcherTimer` de 1 segundo. A cada tick ele só chama `PomodoroService.CheckPhaseEndAsync()`; a regra de tempo fica no serviço, que continua sem WPF.
+
+## Aviso de fim de fase
+
+Quando uma fase termina com o app aberto:
+
+- tocar um som do sistema (`System.Media.SystemSounds`);
+- piscar o ícone na barra de tarefas (`FlashWindowEx` via P/Invoke) até a janela ser ativada;
+- mostrar na tela Pomodoro o estado "Foco concluído — iniciar pausa?" / "Pausa concluída — iniciar foco?".
+
+Regras:
+
+- **não roubar o foco** da janela de outro aplicativo (não trazer a janela para frente);
+- sem dependência externa (Regra 5); notificação toast fica no backlog;
+- o aviso deve funcionar com o app minimizado.
+
+## Tela Pomodoro
+
+Wireframe funcional (o visual segue o design system — Seções 28-31 e 69):
+
+```text
+┌──────────────────────────────────────────────┐
+│ ☰     Pomodoro                               │
+├──────────────────────────────────────────────┤
+│                                              │
+│                    FOCO                      │
+│                   18:42                      │
+│              ●  ●  ○  ○   (ciclo 3 de 4)     │
+│                                              │
+│      Tarefa:  [ Desenvolver API      ▾ ]     │
+│                                              │
+│          [ ⏸ Pausar ]   [ ■ Parar ciclo ]    │
+│                                              │
+│ ──────────────────────────────────────────── │
+│ Foco 25 min · Pausa curta 5 · Longa 15 · 4x  │
+│                         [ Restaurar padrão ] │
+└──────────────────────────────────────────────┘
+```
+
+- A fase atual deve ser identificável por **texto e cor** (não apenas cor — Seção 41).
+- **"Ciclo N de M"** (M = focos até a pausa longa): durante o foco é `(concluídos % M) + 1`; em `AguardandoPausa` e durante a pausa longa mostra "M de M".
+- Foco usa a cor de destaque (Seção 69); pausas usam uma cor secundária do tema (ex.: `Success`).
+- O seletor de tarefa lista as tarefas existentes, com opção "Sem tarefa".
+- Botões variam conforme o estado: Iniciar / Pausar / Retomar / Parar ciclo / Iniciar pausa / Iniciar foco.
+- Indicação discreta de que há um Pomodoro em andamento quando o usuário está em outra tela é **opcional**. Foi apresentada como sugestão na Fase 12.0 (D9: chip na barra superior ou ponto colorido na Sidebar); **a decisão fica para a Fase 12B** e nada disso é implementado na 12A.
+
+## Arquitetura / onde implementar
+
+- **`PomodoroService`**: máquina de estados, cálculo do tempo restante, regra crítica de encerramento, persistência do `PomodoroState`, reação às mudanças do `TimerService`. Métodos sugeridos: `Start(taskId?)`, `Pause()`, `Resume()`, `StopCycle()`, `StartNextPhase()`, `RecoverOnStartup()`.
+- O `PomodoroService` **nunca** acessa repositórios, `DbContext` ou grava `TimeEntry` diretamente; tudo passa pelo `TimerService`.
+- **`TimerService`**: recebe as adições da Seção 34 (encerrar em horário específico, notificar mudanças com a origem; o relógio continua sendo o `IClock`).
+- **Ciclo de vida (D4/D6):** o `PomodoroService` é singleton e é criado no startup (não na primeira navegação), para reagir ao `TimerService` e detectar o fim da fase mesmo com o usuário em outra tela. `App.OnStartup` passa a ser **assíncrono** (`async void`, com `try/catch` e log) para aguardar o `RecoverOnStartup()` depois do `Migrate()`, sem `.GetAwaiter().GetResult()` na thread de UI (risco de deadlock).
+- **Concorrência (D5):** todas as operações do `PomodoroService` (ações do usuário, `CheckPhaseEndAsync`, reações às mudanças do `TimerService` e do `TaskService`, recuperação) são **serializadas por um `SemaphoreSlim`**. Sem isso, um tick no meio de um "Pausar" assíncrono poderia processar o fim da fase duas vezes — o que a regra crítica não admite.
+- **`PomodoroViewModel`** + **`PomodoroView`**: estado da tela e comandos; nenhuma regra de tempo na View/ViewModel (Seção 5).
+- **Aviso de fim de fase**: componente pequeno e isolado (som + `FlashWindowEx`), chamado pelo serviço via evento — o serviço não conhece WPF.
+- `RecoverOnStartup()` deve rodar **depois** da recuperação do timer (Seção 16), para encontrar o estado real das sessões abertas.
+- Não alterar o modelo de dados (`Task`, `Tag`, `TimeEntry`).
+
+## Plano de fases
+
+Cada fase segue a Seção 48 (uma por vez) e termina no formato da Seção 64, aguardando aprovação.
+
+### FASE 12.0 — ANÁLISE DO CÓDIGO EXISTENTE
+
+Sem escrever código. O Claude Code deve ler o código atual e responder:
+
+- onde e como as preferências (tema, cor de destaque) são persistidas, e se o `PomodoroState` cabe nesse mecanismo;
+- se o `TimerService` já permite encerrar uma sessão em horário específico e já notifica mudanças;
+- se o relógio é injetável (`TimeProvider`) ou se há `DateTime.UtcNow`/`DateTime.Now` espalhado — e qual o tamanho do ajuste necessário (Regra 4);
+- como a rota/placeholder Pomodoro está implementada hoje;
+- riscos, inconsistências entre esta seção e o código, e dúvidas que precisam de decisão.
+
+**Critério de aceite:** relatório aprovado pelo usuário.
+
+### FASE 12A — SERVIÇO E TESTES (SEM UI)
+
+- `PomodoroState` e persistência (com a gravação atômica e a leitura validada do `AppSettingsStore`, e registro de falhas de gravação em log);
+- `PomodoroService` com a máquina de estados completa;
+- ajustes no `TimerService` aprovados na 12.0 (`StopAtAsync`, evento `TimerChanged` com origem, tradução do índice único);
+- evento `ITaskService.TaskDeleted` e a correção do ícone da barra de tarefas (o `MainWindow` passa a ouvir `TaskDeleted` e `HistoryCleared`);
+- registro no DI e recuperação assíncrona no `App.OnStartup`;
+- testes unitários e de integração (lista abaixo, mais a cobertura adicional da Seção 47), usando o `IClock` controlável (`TestClock`).
+
+**Critério de aceite:** todos os testes passam, incluindo a reabertura após o fim da fase; nenhum teste existente quebra (Regra 8).
+
+### FASE 12B — TELA E INTEGRAÇÃO
+
+- `PomodoroView` e `PomodoroViewModel`, substituindo o placeholder;
+- configurações (4 valores + restaurar padrão);
+- seletor de tarefa;
+- integração com a tela Time Tracking (tabela de ações externas).
+
+Detalhes (v1.5.2):
+
+- o `PomodoroViewModel` é resolvido no `App.OnStartup` (depois do `RecoverOnStartup()`) e hospeda o tick de 1 s, que só chama `CheckPhaseEndAsync()`; a `PomodoroView` recarrega a lista de tarefas no `Loaded`;
+- o diálogo da Seção 15 é o `ConfirmDialog` existente, mostrado pelo `PomodoroViewModel`; confirmar repete a ação com `replaceActive: true`;
+- as configurações ficam numa "aba" **recolhida por padrão** que abre para baixo ao clicar em "Configurações" (a tela sempre abre recolhida); cada valor é um campo compacto com botões **−** e **+** (segurar repete), além de poder ser digitado;
+- os 4 campos de configuração são validados quando perdem o foco (ou com Enter): valor fora do limite é ajustado ao limite e texto não numérico volta ao valor atual, sempre com mensagem; ficam desabilitados enquanto uma fase de contagem (foco ou pausa) está rodando;
+- indicador D9: **chip na barra superior** ("Foco 18:42", "Pausa 04:10", "Foco concluído"…) com ponto colorido, visível só fora da tela Pomodoro e enquanto houver ciclo ativo; clicar nele abre a tela Pomodoro;
+- o `TimeTrackingViewModel` assina `TimerChanged` e recarrega a lista quando a mudança vem do Pomodoro (`origin = Pomodoro`); mudanças do próprio usuário já recarregam e são ignoradas aqui;
+- todos os textos da tela estão em português.
+
+**Critério de aceite:** um ciclo completo é utilizável pela interface e o tempo de foco aparece na tela Time Tracking e no agrupamento por dia (Seção 68).
+
+### FASE 12C — AVISO DE FIM DE FASE
+
+- som do sistema, `FlashWindowEx` e estado na tela.
+
+Detalhes (v1.5.3):
+
+- o `PhaseEndNotifier` (em `Services/`, sem WPF) assina `IPomodoroService.PhaseEnded` e chama `INativeAlerts` (`WindowsAlerts` em `Helpers/`): `PlaySound` e `FlashTaskbar`. Os dois avisos são independentes — se o som falhar, a barra de tarefas ainda pisca — e nenhuma falha chega ao serviço (vai para o log);
+- som: `SystemSounds.Asterisk` ao fim do foco e `SystemSounds.Exclamation` ao fim da pausa; o botão da janela pisca com `FlashWindowEx` (`FLASHW_TRAY | FLASHW_TIMERNOFG`), **até a janela ser ativada**. Funciona minimizado e não ativa nem traz a janela para frente;
+- avisa só quando o fim é detectado com o app aberto (tick, ação do usuário ou volta de suspensão). **Não avisa** ao reabrir o app depois do fim, nem em Pausar/Retomar/Parar ciclo;
+- o estado na tela ("Foco concluído — iniciar pausa?" / "Pausa concluída — iniciar foco?") e o chip da barra superior já vêm do estado do serviço (Fase 12B).
+
+**Critério de aceite:** o aviso funciona com o app minimizado e em segundo plano, sem roubar o foco de outra janela.
+
+## Testes
+
+- Foco → pausa curta → foco com tarefa vinculada gera exatamente 2 `TimeEntry` com a duração configurada.
+- Após N focos concluídos (padrão 4), a próxima pausa é longa.
+- Fechar o app durante o foco e reabrir **depois** do fim: `TimeEntry` encerrada no fim teórico, estado `AguardandoPausa`.
+- Fechar o app durante o foco e reabrir **antes** do fim: foco retomado com o tempo restante correto.
+- Simular suspensão (avançar o `TestClock` além do fim com o app "aberto"): encerramento no fim teórico.
+- Pausar e retomar o foco: 2 `TimeEntry`, soma igual à duração do foco.
+- Stop da tarefa vinculada pela tela Time Tracking durante o foco: Pomodoro em `FocoPausado` com tempo restante preservado.
+- Iniciar outra tarefa pelo diálogo da Seção 15 durante o foco: Pomodoro em `FocoPausado`.
+- Cancelar o diálogo da Seção 15 ao iniciar um foco: foco não começa, nenhuma `TimeEntry` criada.
+- Iniciar foco com a tarefa vinculada já rodando: sessão reaproveitada, nenhuma `TimeEntry` duplicada (índice único da Seção 9 respeitado).
+- Ciclo sem tarefa vinculada: nenhuma `TimeEntry` criada.
+- Excluir a tarefa vinculada durante o ciclo: vínculo removido, ciclo continua sem erro.
+- Alterar a configuração durante uma fase: a fase atual mantém a duração antiga; a próxima usa a nova.
+- Parar ciclo: `TimeEntry` encerrada (se houver), contador zerado, estado `Idle`.
+
+## Definition of Done do Pomodoro
+
+- [x] tela Pomodoro substitui o placeholder;
+- [x] ciclo foco / pausa curta / pausa longa funciona com as durações configuradas;
+- [x] configurações persistem entre aberturas do app;
+- [x] vínculo com tarefa é opcional;
+- [x] tempo de foco vira `TimeEntry` e aparece no histórico e no agrupamento por dia;
+- [x] regra "apenas um timer rodando" continua válida;
+- [x] fim de fase detectado com app fechado ou PC suspenso encerra a `TimeEntry` no horário teórico;
+- [x] próxima fase só começa com ação do usuário;
+- [x] ações na tela Time Tracking são refletidas no Pomodoro;
+- [x] aviso de fim de fase (som + barra de tarefas + tela) funciona com o app minimizado;
+- [x] nenhuma dependência externa nova;
+- [x] nenhum teste existente quebrou;
+- [x] itens de backlog (toast, auto-início, pular fase, estatísticas) não foram implementados.
+
+**Pomodoro encerrado (v1.5.4, 07/10/2026).** Verificação: 162 testes automatizados passando; roteiros manuais das Fases 12B e 12C aprovados pelo usuário; nenhum pacote novo (apenas o EF Core fixado em 8.0.31 no app e declarado, na mesma versão, nos testes); as mudanças em testes existentes são apenas aditivas; nenhum item do backlog implementado.
 
 ---
 

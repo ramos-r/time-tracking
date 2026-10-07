@@ -49,7 +49,13 @@ public class TaskService : ITaskService
         await _taskRepository.UpdateAsync(task);
     }
 
-    public Task DeleteAsync(int id) => _taskRepository.DeleteAsync(id);
+    public event Action<int>? TaskDeleted;
+
+    public async Task DeleteAsync(int id)
+    {
+        await _taskRepository.DeleteAsync(id);
+        TaskDeleted?.Invoke(id);
+    }
 
     public event Action? HistoryCleared;
 

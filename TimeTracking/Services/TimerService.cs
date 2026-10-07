@@ -1,3 +1,6 @@
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using TimeTracking.Helpers;
 using TimeTracking.Models;
 using TimeTracking.Repositories;
 using DomainTask = TimeTracking.Models.Task;
@@ -55,9 +58,9 @@ public class TimerService : ITimerService
         return openEntry is null ? null : await _taskRepository.GetByIdAsync(openEntry.TaskId);
     }
 
-    public event Action? ActiveTaskChanged;
+    public event Action<TimerChange>? TimerChanged;
 
-    public async Task StartAsync(int taskId)
+    public async Task StartAsync(int taskId, TimerOrigin origin = TimerOrigin.User)
     {
         var openEntry = await _timeEntryRepository.GetOpenEntryAsync();
 
@@ -70,30 +73,68 @@ public class TimerService : ITimerService
 
             openEntry.EndedAt = _clock.UtcNow;
             await _timeEntryRepository.UpdateAsync(openEntry);
+            TimerChanged?.Invoke(new TimerChange(TimerChangeKind.Ended, openEntry.TaskId, origin));
         }
 
-        await _timeEntryRepository.AddAsync(new TimeEntry
+        try
         {
-            TaskId = taskId,
-            StartedAt = _clock.UtcNow,
-            EndedAt = null
-        });
+            await _timeEntryRepository.AddAsync(new TimeEntry
+            {
+                TaskId = taskId,
+                StartedAt = _clock.UtcNow,
+                EndedAt = null
+            });
+        }
+        catch (DbUpdateException ex) when (IsOpenSessionUniqueViolation(ex))
+        {
+            AppLog.Error($"Índice único de sessão aberta violado ao iniciar a tarefa {taskId} (Seção 9).", ex);
+            throw new TimerConflictException(ex);
+        }
 
-        ActiveTaskChanged?.Invoke();
+        TimerChanged?.Invoke(new TimerChange(TimerChangeKind.Started, taskId, origin));
     }
 
-    public async Task PauseAsync(int taskId)
+    public async Task PauseAsync(int taskId, TimerOrigin origin = TimerOrigin.User)
     {
         var openEntry = await _timeEntryRepository.GetOpenEntryAsync();
         if (openEntry is not null && openEntry.TaskId == taskId)
         {
             openEntry.EndedAt = _clock.UtcNow;
             await _timeEntryRepository.UpdateAsync(openEntry);
-            ActiveTaskChanged?.Invoke();
+            TimerChanged?.Invoke(new TimerChange(TimerChangeKind.Ended, taskId, origin));
         }
     }
 
-    public Task StopAsync(int taskId) => PauseAsync(taskId);
+    public Task StopAsync(int taskId, TimerOrigin origin = TimerOrigin.User) => PauseAsync(taskId, origin);
+
+    public async Task StopAtAsync(int taskId, DateTime endedAtUtc, TimerOrigin origin = TimerOrigin.User)
+    {
+        var openEntry = await _timeEntryRepository.GetOpenEntryAsync();
+        if (openEntry is null || openEntry.TaskId != taskId)
+        {
+            return;
+        }
+
+        if (endedAtUtc < openEntry.StartedAt)
+        {
+            throw new ArgumentException("O término não pode ser anterior ao início.", nameof(endedAtUtc));
+        }
+
+        if (endedAtUtc > _clock.UtcNow)
+        {
+            throw new ArgumentException("O término não pode estar no futuro.", nameof(endedAtUtc));
+        }
+
+        openEntry.EndedAt = endedAtUtc;
+        await _timeEntryRepository.UpdateAsync(openEntry);
+        TimerChanged?.Invoke(new TimerChange(TimerChangeKind.Ended, taskId, origin));
+    }
+
+    // Violação do índice único parcial da Seção 9 (SQLITE_CONSTRAINT = 19): distingue um início
+    // concorrente de outras falhas de gravação (ex.: chave estrangeira), que seguem como erro.
+    private static bool IsOpenSessionUniqueViolation(DbUpdateException ex) =>
+        ex.InnerException is SqliteException { SqliteErrorCode: 19 } sqliteEx
+        && sqliteEx.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase);
 
     public Task<List<TimeEntry>> GetEntriesForTaskAsync(int taskId) => _timeEntryRepository.GetAllForTaskAsync(taskId);
 

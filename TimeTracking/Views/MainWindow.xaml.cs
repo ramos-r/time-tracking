@@ -34,7 +34,7 @@ public partial class MainWindow : Window
     private readonly ITimerService _timerService;
     private readonly IThemeService _themeService;
 
-    public MainWindow(MainViewModel viewModel, ITimerService timerService, IThemeService themeService)
+    public MainWindow(MainViewModel viewModel, ITimerService timerService, ITaskService taskService, IThemeService themeService)
     {
         InitializeComponent();
         DataContext = viewModel;
@@ -43,7 +43,12 @@ public partial class MainWindow : Window
         // Troca o ícone da barra de tarefas quando há uma tarefa em execução (Seção 71,
         // feedback de usuário) — assinado aqui em vez de reagir a polling porque o evento já
         // dispara exatamente quando Start/Pause muda a tarefa ativa (Seção 15).
-        _timerService.ActiveTaskChanged += OnActiveTaskChanged;
+        _timerService.TimerChanged += _ => OnActiveTaskChanged();
+        // Excluir a tarefa em execução (ou limpar o histórico) encerra a sessão por cascade no
+        // banco, sem passar pelo TimerService — sem estes dois eventos o ícone ficava preso em
+        // "trabalhando" (v1.5.1, conflito 5 da Fase 12.0).
+        taskService.TaskDeleted += _ => OnActiveTaskChanged();
+        taskService.HistoryCleared += OnActiveTaskChanged;
         _ = RefreshIconAsync();
 
         _themeService = themeService;

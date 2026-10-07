@@ -37,17 +37,61 @@
         <!-- Barra superior: sempre visível, contém o botão hamburger (Seção 19) -->
         <Border DockPanel.Dock="Top" Height="48" Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Command="{Binding ToggleSidebarCommand}"
-                        Style="{StaticResource IconButtonStyle}"
-                        Width="48" Height="48">
-                    <Path Data="{StaticResource HamburgerIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
-                          Stretch="Uniform" Width="18" Height="18" />
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <Button Command="{Binding ToggleSidebarCommand}"
+                            Style="{StaticResource IconButtonStyle}"
+                            Width="48" Height="48">
+                        <Path Data="{StaticResource HamburgerIconGeometry}" Fill="{DynamicResource TextPrimaryBrush}"
+                              Stretch="Uniform" Width="18" Height="18" />
+                    </Button>
+                    <TextBlock Text="{Binding PageTitle}" FontSize="15" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
+                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0"
+                               Visibility="{Binding ShowPageTitle, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+
+                <!-- Chip do Pomodoro em andamento (D9): discreto, só fora da tela Pomodoro; o
+                     clique leva até ela. O ponto colorido acompanha a fase (foco = cor de
+                     destaque, pausa = sucesso), mas o texto também diz qual é (Seção 41). -->
+                <Button HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,16,0"
+                        DataContext="{Binding Pomodoro}"
+                        Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{x:Static vm:AppPage.Pomodoro}"
+                        ToolTip="Pomodoro em andamento — clique para abrir"
+                        Cursor="Hand" Focusable="True"
+                        Visibility="{Binding DataContext.ShowPomodoroChip, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVisibility}}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Chip" Background="{DynamicResource PrimarySubtleBrush}" CornerRadius="12" Padding="10,4">
+                                <StackPanel Orientation="Horizontal">
+                                    <Ellipse Width="8" Height="8" Margin="0,0,6,0" VerticalAlignment="Center">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Fill" Value="{DynamicResource TextMutedBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFocusPhase}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource PrimaryBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsBreakPhase}" Value="True">
+                                                        <Setter Property="Fill" Value="{DynamicResource SuccessBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="{Binding ChipText}" FontSize="12" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Chip" Property="Opacity" Value="0.8" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
                 </Button>
-                <TextBlock Text="{Binding PageTitle}" FontSize="15" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
-                           Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" Margin="8,0,0,0"
-                           Visibility="{Binding ShowPageTitle, Converter={StaticResource BoolToVisibility}}" />
-            </StackPanel>
+            </Grid>
         </Border>
 
         <!-- Área de conteúdo + sidebar: agora empurra o conteúdo (largura anima 0↔240) em vez

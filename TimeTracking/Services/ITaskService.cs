@@ -18,4 +18,10 @@ public interface ITaskService
     /// tarefas já carregada em memória lá (Seção 65, AsNoTracking) ficaria desatualizada até o
     /// usuário reiniciar o app ou trocar de tela e voltar.</summary>
     event Action? HistoryCleared;
+
+    /// <summary>Disparado após cada exclusão individual (a exclusão em lote chama DeleteAsync uma
+    /// vez por tarefa), simétrico ao HistoryCleared (v1.5.1). A exclusão remove as TimeEntry por
+    /// cascade sem passar pelo TimerService — então o ícone da barra de tarefas e o
+    /// PomodoroService (vínculo com a tarefa) dependem deste evento para se atualizar.</summary>
+    event Action<int>? TaskDeleted;
 }

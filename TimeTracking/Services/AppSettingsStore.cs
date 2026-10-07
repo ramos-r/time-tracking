@@ -35,6 +35,7 @@ public class AppSettingsStore
                 var data = JsonSerializer.Deserialize<AppSettingsData>(json);
                 if (data is not null)
                 {
+                    data.Normalize();
                     return data;
                 }
             }
@@ -54,11 +55,46 @@ public class AppSettingsStore
             var data = Load();
             mutate(data);
             var json = JsonSerializer.Serialize(data);
-            File.WriteAllText(_path, json);
+
+            // Gravação atômica (D7): escreve num arquivo temporário e só então substitui o
+            // settings.json, para que uma queda no meio da gravação não deixe o arquivo pela
+            // metade (o que zeraria tema, cor de destaque e estado do ciclo de uma vez).
+            var tempPath = _path + ".tmp";
+            try
+            {
+                File.WriteAllText(tempPath, json);
+                if (File.Exists(_path))
+                {
+                    File.Replace(tempPath, _path, destinationBackupFileName: null);
+                }
+                else
+                {
+                    File.Move(tempPath, _path);
+                }
+            }
+            catch
+            {
+                TryDelete(tempPath);
+                throw;
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // Falha ao persistir não deve impedir a alteração de valer para a sessão atual.
+            // Falha ao persistir não deve impedir a alteração de valer para a sessão atual —
+            // mas deixa rastro no log (Seção 46): é risco residual aceito, não silêncio.
+            AppLog.Error($"Falha ao gravar {_path}.", ex);
+        }
+    }
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Resíduo inofensivo: o próximo Save sobrescreve o .tmp.
         }
     }
 }

@@ -4,10 +4,216 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:TimeTracking.ViewModels"
+             xmlns:components="clr-namespace:TimeTracking.Views.Components"
+             xmlns:converters="clr-namespace:TimeTracking.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:PomodoroViewModel}">
-    <StackPanel Margin="24" VerticalAlignment="Center" HorizontalAlignment="Center">
-        <TextBlock Text="{Binding Title}" FontSize="22" FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal" HorizontalAlignment="Center" />
-        <TextBlock Text="{Binding Message}" FontSize="14" Margin="0,8,0,0" HorizontalAlignment="Center" Opacity="0.7" />
-    </StackPanel>
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <converters:NullOrEmptyToVisibilityConverter x:Key="NullOrEmptyToVisibility" />
+    </UserControl.Resources>
+
+    <Grid ClipToBounds="True">
+        <ScrollViewer x:Name="Scroll" VerticalScrollBarVisibility="Hidden">
+            <!-- O Margin de cima é calculado no code-behind (Recenter): centraliza o bloco
+                 principal (MainBlock) na vertical SEM contar a aba de configurações, que cresce
+                 para baixo — assim abrir/fechar a aba não move o que está acima dela. -->
+            <StackPanel x:Name="RootStack" MaxWidth="440" Margin="24" HorizontalAlignment="Center">
+            <StackPanel x:Name="MainBlock">
+
+                <!-- Fase atual: identificada por texto E por cor (Seção 41) — foco usa a cor de
+                     destaque, pausas usam a cor de sucesso, o resto é neutro. -->
+                <TextBlock Text="{Binding PhaseLabel}" FontSize="15" HorizontalAlignment="Center"
+                           FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
+                           TextWrapping="Wrap" TextAlignment="Center" Margin="0,16,0,0">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsFocusPhase}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsBreakPhase}" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBlock Text="{Binding TimeDisplay}" FontSize="72" HorizontalAlignment="Center"
+                           FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
+                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,4,0,4" />
+
+                <!-- Pontos do ciclo + "Ciclo N de M" -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <ItemsControl ItemsSource="{Binding CycleDots}" VerticalAlignment="Center">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Ellipse Width="10" Height="10" Margin="0,0,8,0" StrokeThickness="1.5"
+                                         Stroke="{DynamicResource PrimaryBrush}">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="Transparent" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFilled}" Value="True">
+                                                    <Setter Property="Fill" Value="{DynamicResource PrimaryBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding CycleText}" FontSize="12" VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+
+                <!-- Tarefa vinculada (opcional) — só pode ser trocada sem foco rodando. -->
+                <TextBlock Text="Tarefa" Margin="0,32,0,4" Opacity="0.7" FontSize="12"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <ComboBox ItemsSource="{Binding TaskOptions}" SelectedItem="{Binding SelectedTaskOption}"
+                          DisplayMemberPath="Name" IsEnabled="{Binding CanChangeTask}" />
+                <TextBlock Text="Para trocar a tarefa, pause o foco." FontSize="11" Margin="0,4,0,0"
+                           Foreground="{DynamicResource TextMutedBrush}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <!-- Hidden (não Collapsed): a dica reserva o espaço, para o bloco não
+                                 mudar de altura (e se recentralizar) quando o foco começa. -->
+                            <Setter Property="Visibility" Value="Hidden" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CanChangeTask}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{DynamicResource DangerBrush}" FontSize="12"
+                           Margin="0,16,0,0" TextWrapping="Wrap"
+                           Visibility="{Binding ErrorMessage, Converter={StaticResource NullOrEmptyToVisibility}}" />
+
+                <!-- Botões variam conforme o estado: Iniciar foco / Pausar / Retomar / Iniciar
+                     pausa (um só botão principal) + Parar ciclo. -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,24,0,0">
+                    <Button Command="{Binding PrimaryActionCommand}" Content="{Binding PrimaryActionText}"
+                            Style="{StaticResource PrimaryButtonStyle}" MinWidth="120" />
+                    <Button Command="{Binding StopCycleCommand}" Content="Parar ciclo" Margin="8,0,0,0"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Visibility="{Binding ShowStopButton, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+
+                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,32,0,0" />
+
+                <!-- "Aba" de configurações: recolhida por padrão, abre para baixo ao clicar no
+                     cabeçalho (ficam aqui, não em Settings — Seções 26/70). Os campos ficam
+                     desabilitados enquanto uma fase de contagem está rodando, e alterá-los nunca
+                     afeta a fase em andamento. -->
+                <Button Command="{Binding ToggleSettingsCommand}" HorizontalAlignment="Stretch"
+                        Cursor="Hand" Margin="0,4,0,0" AutomationProperties.Name="Configurações">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bg" Background="Transparent" CornerRadius="6" Padding="0,10">
+                                <Grid>
+                                    <TextBlock Text="Configurações" FontSize="15" VerticalAlignment="Center"
+                                               FontFamily="{StaticResource AppFontFamilyLight}" FontWeight="Normal"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    <Path x:Name="Chevron" Data="M 0,0 L 5,5 L 10,0" HorizontalAlignment="Right"
+                                          VerticalAlignment="Center" Margin="0,0,4,0" Stretch="None"
+                                          Stroke="{DynamicResource TextSecondaryBrush}" StrokeThickness="1.6"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          RenderTransformOrigin="0.5,0.5">
+                                        <Path.RenderTransform>
+                                            <RotateTransform Angle="0" />
+                                        </Path.RenderTransform>
+                                    </Path>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <!-- Sem destaque de hover (só o cursor de mão) — o fundo roxo foi removido. -->
+                                <!-- A seta aponta para baixo com a aba fechada e para cima com ela aberta. -->
+                                <DataTrigger Binding="{Binding IsSettingsOpen}" Value="True">
+                                    <Setter TargetName="Chevron" Property="RenderTransform">
+                                        <Setter.Value>
+                                            <RotateTransform Angle="180" />
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+
+                <!-- Conteúdo da aba: o Border recorta e tem a altura animada no code-behind
+                     (abre/fecha suave para baixo, como o painel de edição do Time Tracking). -->
+                <Border x:Name="SettingsHost" ClipToBounds="True" Height="0" Visibility="Collapsed">
+                <StackPanel x:Name="SettingsContent" Margin="0,8,0,0">
+
+                    <Grid IsEnabled="{Binding AreSettingsEnabled}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Duração do foco (min)" VerticalAlignment="Center" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" />
+                        <components:NumberStepper Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
+                                                  Minimum="1" Maximum="120" Text="{Binding FocusMinutesText}" />
+
+                        <TextBlock Grid.Row="1" Text="Pausa curta (min)" VerticalAlignment="Center" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" />
+                        <components:NumberStepper Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"
+                                                  Minimum="1" Maximum="60" Text="{Binding ShortBreakMinutesText}" />
+
+                        <TextBlock Grid.Row="2" Text="Pausa longa (min)" VerticalAlignment="Center" Margin="0,0,0,8"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" />
+                        <components:NumberStepper Grid.Row="2" Grid.Column="1" Margin="0,0,0,8"
+                                                  Minimum="1" Maximum="60" Text="{Binding LongBreakMinutesText}" />
+
+                        <TextBlock Grid.Row="3" Text="Focos até a pausa longa" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextPrimaryBrush}" FontSize="13" />
+                        <components:NumberStepper Grid.Row="3" Grid.Column="1"
+                                                  Minimum="2" Maximum="10" Text="{Binding FocusesUntilLongBreakText}" />
+                    </Grid>
+
+                    <TextBlock Text="{Binding ConfigError}" Foreground="{DynamicResource DangerBrush}" FontSize="11"
+                               Margin="0,8,0,0" TextWrapping="Wrap"
+                               Visibility="{Binding ConfigError, Converter={StaticResource NullOrEmptyToVisibility}}" />
+
+                    <Button Content="Restaurar padrão" Command="{Binding RestoreDefaultsCommand}"
+                            IsEnabled="{Binding AreSettingsEnabled}"
+                            Style="{StaticResource LinkButtonStyle}" Foreground="{DynamicResource TextSecondaryBrush}"
+                            HorizontalAlignment="Right" Padding="0" Margin="0,12,0,0" />
+                </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Conflito de timer (Seção 15) ao iniciar/retomar o foco com a tarefa vinculada —
+             mesmo componente de diálogo da tela Time Tracking, mostrado por este ViewModel. -->
+        <Border Background="{DynamicResource OverlayBrush}"
+                Visibility="{Binding IsConflictOpen, Converter={StaticResource BoolToVisibility}}">
+            <components:ConfirmDialog Title="Outra tarefa em execução"
+                                       Message="{Binding ConflictMessage}"
+                                       ConfirmText="Pausar e iniciar" CancelText="Cancelar"
+                                       IsDestructive="False"
+                                       ConfirmCommand="{Binding ConfirmConflictCommand}"
+                                       CancelCommand="{Binding CancelConflictCommand}" />
+        </Border>
+    </Grid>
 </UserControl>
